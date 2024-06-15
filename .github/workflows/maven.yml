@@ -1,11 +1,3 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Java CI with Maven
 
 on:
@@ -41,9 +33,9 @@ jobs:
         run: mvn install:install-file -Dfile=libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar
       - name: Add tripPricer
         run: mvn install:install-file -Dfile=libs/TripPricer.jar -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar
-      - name: Build with Maven
+      - name: Build phase
         run: mvn -B package --file pom.xml
-      - name: Run the Maven verify phase
+      - name: Test phase
         run: mvn --batch-mode --update-snapshots verify
       - name: Create a Release
         run: mkdir staging && cp target/*.jar staging
