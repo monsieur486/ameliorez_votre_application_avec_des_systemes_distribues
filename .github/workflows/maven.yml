@@ -14,6 +14,11 @@ on:
     tags:
         - "release v*"
 
+  pull_request:
+    branches: [ "master" ]
+    tags:
+      - "release v*"
+
 permissions:
   contents: write
 
@@ -49,7 +54,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
-          prerelease: true
+          prerelease: false
           title: "Last release"
           files: |
             staging/*.jar
