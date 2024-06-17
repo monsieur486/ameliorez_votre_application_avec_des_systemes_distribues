@@ -1,3 +1,5 @@
+# Test, Build, Release, and Docker image creation with Maven
+
 name: Java CI with Maven
 
 on:
@@ -33,10 +35,12 @@ jobs:
         run: mvn install:install-file -Dfile=libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar
       - name: Add tripPricer
         run: mvn install:install-file -Dfile=libs/TripPricer.jar -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar
-      - name: Build phase
-        run: mvn -B package --file pom.xml
-      - name: Test phase
-        run: mvn --batch-mode --update-snapshots verify
+      - name: unit tests
+        run: mvn -B test --file pom.xml
+      - name: build the app
+        run: |
+          mvn clean
+          mvn -B package --file pom.xml
       - name: Create a Release
         run: mkdir staging && cp target/*.jar staging
       - uses: actions/upload-artifact@v4
@@ -48,6 +52,25 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: false
-          title: "Last release"
+          title: "Last stable release"
           files: |
             staging/*.jar
+      - name: build the docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/projet08:latest
+      - name: login to docker hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: push the docker image to docker hub
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/projet08:latest
