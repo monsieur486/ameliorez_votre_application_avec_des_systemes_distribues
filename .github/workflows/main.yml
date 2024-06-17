@@ -45,7 +45,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: false
-          title: "Last stable release"
+          title: "Latest stable release - jar file"
           files: |
             staging/*.jar
       - name: build the docker image
