@@ -24,7 +24,7 @@ public class TourGuideController {
 	
     @RequestMapping("/")
     public String index() {
-        return "Greetings from TourGuide! \uD83D\uDE0A";
+        return "Greetings from TourGuide!";
     }
     
     @RequestMapping("/getLocation") 
