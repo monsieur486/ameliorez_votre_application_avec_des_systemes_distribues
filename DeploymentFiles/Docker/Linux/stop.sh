@@ -1,1 +1,1 @@
-docker stop tourguide
+docker-compose stop

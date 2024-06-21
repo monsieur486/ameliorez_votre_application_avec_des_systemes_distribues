@@ -1,2 +1,3 @@
-docker rm tourguide
-docker pull monsieur486/projet08:latest
+docker-compose stop
+docker-compose pull
+docker-compose up -d

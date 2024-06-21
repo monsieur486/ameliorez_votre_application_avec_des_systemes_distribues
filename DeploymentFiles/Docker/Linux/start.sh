@@ -1,1 +1,2 @@
-docker run -d -p 8080:8080 --name tourguide monsieur486/projet08:latest
+docker-compose stop
+docker-compose up -d
