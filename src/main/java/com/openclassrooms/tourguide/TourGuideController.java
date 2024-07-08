@@ -32,7 +32,7 @@ public class TourGuideController {
             }
             catch (UnknownHostException ignored) {
         }
-        return "Greetings from TourGuide! hostname: " + hostName;
+        return "Greetings from TourGuide! from hostname " + hostName;
     }
     
     @RequestMapping("/getLocation") 
