@@ -1,9 +1,11 @@
-version: '3'
-
 services:
   tourguide:
     image: monsieur486/projet08:latest
-    container_name: tourguide
     restart: on-failure
     ports:
-      - 8080:8080
+      - "8081-8085:8080"
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"
