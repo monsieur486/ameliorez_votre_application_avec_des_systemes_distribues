@@ -1,5 +1,7 @@
 package com.openclassrooms.tourguide;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,13 @@ public class TourGuideController {
 	
     @RequestMapping("/")
     public String index() {
-        return "Greetings from TourGuide!";
+        String hostName = "*";
+        try {
+            hostName = InetAddress.getLocalHost().getHostName();
+            }
+            catch (UnknownHostException ignored) {
+        }
+        return "Greetings from TourGuide! hostname: " + hostName;
     }
     
     @RequestMapping("/getLocation") 

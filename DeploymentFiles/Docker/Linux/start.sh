@@ -1,2 +1,2 @@
 docker-compose stop
-docker-compose up -d
+docker-compose up --build -d --scale tourguide=5
