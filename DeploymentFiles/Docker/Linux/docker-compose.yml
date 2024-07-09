@@ -4,7 +4,8 @@ services:
   TG_slave01:
     image: monsieur486/projet08:latest
     restart: on-failure
-    hostname: TG_slave01
+    hostname: slave01.projet08.mr486.com
+    container_name: tourguide_slave01
     ports:
       - "1901:8080"
     networks:
@@ -13,7 +14,8 @@ services:
   TG_slave02:
     image: monsieur486/projet08:latest
     restart: on-failure
-    hostname: TG_slave02
+    hostname: slave02.projet08.mr486.com
+    container_name: tourguide_slave02
     ports:
       - "1902:8080"
     networks:
@@ -24,7 +26,8 @@ services:
   TG_slave03:
     image: monsieur486/projet08:latest
     restart: on-failure
-    hostname: TG_slave03
+    hostname: slave03.projet08.mr486.com
+    container_name: tourguide_slave03
     ports:
       - "1903:8080"
     networks:
@@ -35,7 +38,8 @@ services:
   TG_slave04:
     image: monsieur486/projet08:latest
     restart: on-failure
-    hostname: TG_slave04
+    hostname: slave04.projet08.mr486.com
+    container_name: tourguide_slave04
     ports:
       - "1904:8080"
     networks:
@@ -46,7 +50,8 @@ services:
   TG_slave05:
     image: monsieur486/projet08:latest
     restart: on-failure
-    hostname: TG_slave05
+    hostname: slave05.projet08.mr486.com
+    container_name: tourguide_slave05
     ports:
       - "1905:8080"
     networks:
@@ -56,6 +61,9 @@ services:
 
   nginx:
     build: ./nginx
+    restart: always
+    hostname: nginx.projet08.mr486.com
+    container_name: tourguide_nginx
     ports:
       - "1900:80"
     networks:
