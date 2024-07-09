@@ -1,13 +1,58 @@
 version: '3.1'
 
 services:
-  tourguide:
+  TG_slave01:
     image: monsieur486/projet08:latest
     restart: on-failure
+    hostname: TG_slave01
     ports:
-      - "1901-1905:8080"
+      - "1901:8080"
     networks:
       - backend
+
+  TG_slave02:
+    image: monsieur486/projet08:latest
+    restart: on-failure
+    hostname: TG_slave02
+    ports:
+      - "1902:8080"
+    networks:
+      - backend
+    depends_on:
+      - TG_slave01
+
+  TG_slave03:
+    image: monsieur486/projet08:latest
+    restart: on-failure
+    hostname: TG_slave03
+    ports:
+      - "1903:8080"
+    networks:
+      - backend
+    depends_on:
+      - TG_slave02
+
+  TG_slave04:
+    image: monsieur486/projet08:latest
+    restart: on-failure
+    hostname: TG_slave04
+    ports:
+      - "1904:8080"
+    networks:
+      - backend
+    depends_on:
+      - TG_slave03
+
+  TG_slave05:
+    image: monsieur486/projet08:latest
+    restart: on-failure
+    hostname: TG_slave05
+    ports:
+      - "1905:8080"
+    networks:
+      - backend
+    depends_on:
+      - TG_slave04
 
   nginx:
     build: ./nginx
@@ -15,6 +60,8 @@ services:
       - "1900:80"
     networks:
       - frontend
+    depends_on:
+      - TG_slave05
 
 networks:
   frontend:
