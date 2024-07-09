@@ -1,11 +1,23 @@
+version: '3.1'
+
 services:
   tourguide:
     image: monsieur486/projet08:latest
     restart: on-failure
     ports:
       - "1901-1905:8080"
+    networks:
+      - backend
 
   nginx:
     build: ./nginx
     ports:
       - "1900:80"
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
