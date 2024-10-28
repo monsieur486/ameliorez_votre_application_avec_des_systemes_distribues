@@ -1,0 +1,6 @@
+services:
+  tourguide:
+    image: monsieur486/projet08:latest
+    container_name: tourguide
+    ports:
+      - '8080:8080'
