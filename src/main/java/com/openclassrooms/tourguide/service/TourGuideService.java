@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -39,7 +38,7 @@ public class TourGuideService {
   // internal users are provided and stored in memory
   private final Map<String, User> internalUserMap = new HashMap<>();
   private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
-  boolean testMode = true;
+  boolean testMode = ApplicationConfiguation.TEST_MODE;
 
   public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
     this.gpsUtil = gpsUtil;
@@ -62,9 +61,8 @@ public class TourGuideService {
   }
 
   public VisitedLocation getUserLocation(User user) {
-    VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
+    return (!user.getVisitedLocations().isEmpty()) ? user.getLastVisitedLocation()
             : trackUserLocation(user);
-    return visitedLocation;
   }
 
   public User getUser(String userName) {
@@ -76,7 +74,7 @@ public class TourGuideService {
   }
 
   public List<User> getAllUsers() {
-    return internalUserMap.values().stream().collect(Collectors.toList());
+    return new ArrayList<>(internalUserMap.values());
   }
 
   public void addUser(User user) {
