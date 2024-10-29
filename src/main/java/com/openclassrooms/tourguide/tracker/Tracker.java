@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.tracker;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguation;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import org.apache.commons.lang3.time.StopWatch;
@@ -44,9 +45,18 @@ public class Tracker extends Thread {
       List<User> users = tourGuideService.getAllUsers();
       logger.debug("Begin Tracker. Tracking " + users.size() + " users.");
       stopWatch.start();
-      users.forEach(u -> tourGuideService.trackUserLocation(u));
+      if (ApplicationConfiguation.PARALLEL_PROCESSING) {
+        logger.debug("Tracker is using parallel processing");
+        tourGuideService.parallelTrackAllUsersLocation(users);
+      } else {
+        logger.debug("Tracker is using sequential processing");
+        users.forEach(tourGuideService::trackUserLocation);
+      }
+
       stopWatch.stop();
-      logger.debug("Tracker Time Elapsed: " + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()) + " seconds.");
+      logger.debug("!!! END !!! Tracker Time Elapsed: {} seconds for {} users.",
+              TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()),
+              users.size());
       stopWatch.reset();
       try {
         logger.debug("Tracker sleeping");
