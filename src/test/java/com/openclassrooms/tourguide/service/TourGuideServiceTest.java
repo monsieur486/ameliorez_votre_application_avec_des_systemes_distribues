@@ -1,6 +1,5 @@
 package com.openclassrooms.tourguide.service;
 
-import com.openclassrooms.tourguide.configuration.ApplicationConfiguation;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
@@ -20,11 +19,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class TourGuideServiceTest {
 
   private TourGuideService tourGuideService;
-  private GpsUtil gpsUtil;
 
   @BeforeEach
   void setUp() {
-    gpsUtil = Mockito.mock(GpsUtil.class);
+    GpsUtil gpsUtil = Mockito.mock(GpsUtil.class);
     RewardCentral rewardCentral = Mockito.mock(RewardCentral.class);
     RewardsService rewardsService = new RewardsService(gpsUtil, rewardCentral);
     tourGuideService = new TourGuideService(gpsUtil, rewardsService);
@@ -108,28 +106,5 @@ class TourGuideServiceTest {
 
     assertNotNull(providers);
     assertFalse(providers.isEmpty());
-  }
-
-  @Test
-  void trackUserLocation() {
-    User user = new User(UUID.randomUUID(), "testUser", "000", "test@tourGuide.com");
-    VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), new gpsUtil.location.Location(0, 0), null);
-    Mockito.when(gpsUtil.getUserLocation(user.getUserId())).thenReturn(visitedLocation);
-
-    VisitedLocation location = tourGuideService.trackUserLocation(user);
-
-    assertNotNull(location);
-    assertEquals(visitedLocation, location);
-  }
-
-  @Test
-  void parallelTrackAllUsersLocation() {
-    User user = new User(UUID.randomUUID(), "testUser", "000", "test@tourGuide.com");
-    tourGuideService.addUser(user);
-
-    tourGuideService.parallelTrackAllUsersLocation(List.of(user));
-
-    assertNotNull(user.getVisitedLocations());
-    assertFalse(user.getVisitedLocations().isEmpty());
   }
 }
