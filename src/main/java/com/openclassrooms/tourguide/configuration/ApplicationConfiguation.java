@@ -19,5 +19,4 @@ public class ApplicationConfiguation {
 
   public final static int MAX_ATTRACTION_TO_SHOW = 5;
 
-
 }
