@@ -48,6 +48,8 @@ jobs:
           title: "stable release"
           files: |
             staging/*.jar
+            
+
 #      - name: build the docker image
 #        uses: docker/build-push-action@v4
 #        with:
