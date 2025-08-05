@@ -1,8 +1,10 @@
 package com.openclassrooms.tourguide.user;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
+
 public class UserPreferences {
 	
-	private int attractionProximity = Integer.MAX_VALUE;
+	private int attractionProximity = ApplicationConfiguration.ATTRACTION_PROXIMITY;
 	private int tripDuration = 1;
 	private int ticketQuantity = 1;
 	private int numberOfAdults = 1;
