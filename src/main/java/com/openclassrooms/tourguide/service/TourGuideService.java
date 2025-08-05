@@ -16,8 +16,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,6 +42,9 @@ public class TourGuideService {
 	private final RewardsService rewardsService;
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
+
+	private final ExecutorService executor = Executors.newFixedThreadPool(
+					ApplicationConfiguration.TOURGUIDE_PARALLEL_THREAD_NUMBER);
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -91,6 +99,27 @@ public class TourGuideService {
 		user.addToVisitedLocations(visitedLocation);
 		rewardsService.calculateRewards(user);
 		return visitedLocation;
+	}
+
+	public void trackUserLocationsParallel(List<User> users) {
+		List<Callable<Void>> tasks = users.stream()
+						.map(user -> (Callable<Void>) () -> {
+							trackUserLocation(user);
+							return null;
+						})
+						.collect(Collectors.toList());
+
+		try {
+			executor.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Parallel tracking interrupted", e);
+		}
+	}
+
+	@PreDestroy
+	public void shutdownExecutor() {
+		executor.shutdown();
 	}
 
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {

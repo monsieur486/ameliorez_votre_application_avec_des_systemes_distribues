@@ -1,8 +1,15 @@
 package com.openclassrooms.tourguide.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
 import gpsUtil.GpsUtil;
@@ -15,6 +22,9 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 @Service
 public class RewardsService {
+
+	private final ExecutorService executor = Executors.newFixedThreadPool(
+					ApplicationConfiguration.REWARDS_PARALLEL_THREAD_NUMBER);
 
 	// proximity in miles
 	private final int defaultProximityBuffer = ApplicationConfiguration.DEFAULT_PROXIMITY_BUFFER;
@@ -34,20 +44,51 @@ public class RewardsService {
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
-	
+
 	public void calculateRewards(User user) {
-		List<VisitedLocation> userLocations = user.getVisitedLocations();
+		List<VisitedLocation> userLocations;
+		synchronized (user.getVisitedLocations()) {
+			userLocations = new ArrayList<>(user.getVisitedLocations());
+		}
+
 		List<Attraction> attractions = gpsUtil.getAttractions();
-		
-		for(VisitedLocation visitedLocation : userLocations) {
-			for(Attraction attraction : attractions) {
-				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-					if(nearAttraction(visitedLocation, attraction)) {
-						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
-					}
+
+		Set<String> alreadyRewarded;
+		synchronized (user.getUserRewards()) {
+			alreadyRewarded = user.getUserRewards().stream()
+							.map(r -> r.getAttraction().attractionName)
+							.collect(Collectors.toSet());
+		}
+
+		for (VisitedLocation visitedLocation : userLocations) {
+			for (Attraction attraction : attractions) {
+				if (!alreadyRewarded.contains(attraction.attractionName) && nearAttraction(visitedLocation, attraction)) {
+					user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
 				}
 			}
 		}
+	}
+
+	public void calculateRewardsParallel(List<User> users) {
+		List<Callable<Void>> tasks = users.stream()
+				.map(user -> (Callable<Void>) () -> {
+					calculateRewards(user);
+					return null;
+				})
+				.collect(Collectors.toList());
+
+		try {
+			executor.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Error calculating rewards in parallel", e);
+		}
+
+	}
+
+	@PreDestroy
+	public void shutdownExecutor() {
+		executor.shutdown();
 	}
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
