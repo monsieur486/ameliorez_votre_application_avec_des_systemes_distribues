@@ -4,11 +4,11 @@ public class ApplicationConfiguration {
 
   public static final boolean TEST_MODE = true;
 
-  public static final int INTERNAL_USER_NUMBER = 100000;
+  public static final int INTERNAL_USER_NUMBER = 100;
 
-  public static final int TOURGUIDE_PARALLEL_THREAD_NUMBER = 2000;
+  public static final int TOURGUIDE_PARALLEL_THREAD_NUMBER = 700;
 
-  public static final int REWARDS_PARALLEL_THREAD_NUMBER = 2000;
+  public static final int REWARDS_PARALLEL_THREAD_NUMBER = 700;
 
   public static final int DEFAULT_PROXIMITY_BUFFER = 10;
 
