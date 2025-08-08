@@ -4,7 +4,7 @@ public class ApplicationConfiguration {
 
   public static final boolean TEST_MODE = true;
 
-  public static final int INTERNAL_USER_NUMBER = 100;
+  public static final int INTERNAL_USER_NUMBER = 10;
 
   public static final int TOURGUIDE_PARALLEL_THREAD_NUMBER = 2000;
 
