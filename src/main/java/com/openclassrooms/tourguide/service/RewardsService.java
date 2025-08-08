@@ -1,5 +1,16 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
+import com.openclassrooms.tourguide.user.User;
+import com.openclassrooms.tourguide.user.UserReward;
+import gpsUtil.GpsUtil;
+import gpsUtil.location.Attraction;
+import gpsUtil.location.Location;
+import gpsUtil.location.VisitedLocation;
+import jakarta.annotation.PreDestroy;
+import org.springframework.stereotype.Service;
+import rewardCentral.RewardCentral;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -7,18 +18,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
-import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
-import jakarta.annotation.PreDestroy;
-import org.springframework.stereotype.Service;
-
-import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
-import gpsUtil.location.Location;
-import gpsUtil.location.VisitedLocation;
-import rewardCentral.RewardCentral;
-import com.openclassrooms.tourguide.user.User;
-import com.openclassrooms.tourguide.user.UserReward;
 
 @Service
 public class RewardsService {
@@ -69,7 +68,7 @@ public class RewardsService {
 		}
 	}
 
-	public void calculateRewardsParallel(List<User> users) {
+	public void calculateRewardsListUsers(List<User> users) {
 		List<Callable<Void>> tasks = users.stream()
 				.map(user -> (Callable<Void>) () -> {
 					calculateRewards(user);
@@ -99,8 +98,8 @@ public class RewardsService {
 	private boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
 		return !(getDistance(attraction, visitedLocation.location) > proximityBuffer);
 	}
-	
-	private int getRewardPoints(Attraction attraction, User user) {
+
+  int getRewardPoints(Attraction attraction, User user) {
 		return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
 	}
 	

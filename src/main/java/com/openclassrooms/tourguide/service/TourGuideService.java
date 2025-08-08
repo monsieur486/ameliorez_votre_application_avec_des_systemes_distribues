@@ -1,39 +1,30 @@
 package com.openclassrooms.tourguide.service;
 
 import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
+import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
+import gpsUtil.GpsUtil;
+import gpsUtil.location.Attraction;
+import gpsUtil.location.Location;
+import gpsUtil.location.VisitedLocation;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import tripPricer.Provider;
+import tripPricer.TripPricer;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
-import gpsUtil.location.Location;
-import gpsUtil.location.VisitedLocation;
-
-import tripPricer.Provider;
-import tripPricer.TripPricer;
 
 @Service
 public class TourGuideService {
@@ -101,7 +92,7 @@ public class TourGuideService {
 		return visitedLocation;
 	}
 
-	public void trackUserLocationsParallel(List<User> users) {
+	public void trackListUsersLocations(List<User> users) {
 		List<Callable<Void>> tasks = users.stream()
 						.map(user -> (Callable<Void>) () -> {
 							trackUserLocation(user);
@@ -133,7 +124,27 @@ public class TourGuideService {
 		return nearbyAttractions;
 	}
 
-	private void addShutDownHook() {
+  public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
+    List<AttractionNearbyUserDto> nearbyAttractions = new ArrayList<>();
+    for (Attraction attraction : gpsUtil.getAttractions()) {
+      int rewardPoints = rewardsService.getRewardPoints(attraction, user);
+      double distance = rewardsService.getDistance(attraction, visitedLocation.location);
+      AttractionNearbyUserDto attractionNearbyUserDto = new AttractionNearbyUserDto(attraction, visitedLocation, rewardPoints, distance);
+      nearbyAttractions.add(attractionNearbyUserDto);
+    }
+
+    // Sort by distance (nearest to furthest)p
+    nearbyAttractions.sort(Comparator.comparing(AttractionNearbyUserDto::getDistance));
+
+    // Limit to 5 attractions
+    if (nearbyAttractions.size() > ApplicationConfiguration.MAX_ATTRACTIONS_TO_SHOW) {
+      nearbyAttractions = nearbyAttractions.subList(0, ApplicationConfiguration.MAX_ATTRACTIONS_TO_SHOW);
+    }
+
+    return nearbyAttractions;
+  }
+
+  private void addShutDownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				tracker.stopTracking();

@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import gpsUtil.GpsUtil;
@@ -62,16 +61,8 @@ public class TestPerformance {
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 
-		// Track user locations
-		// If parallel processing is enabled, use the parallel method
-		// Otherwise, track each user sequentially
-		if(ApplicationConfiguration.PRALLEL_PROCESSING) {
-			tourGuideService.trackUserLocationsParallel(allUsers);
-		} else {
-			for (User user : allUsers) {
-				tourGuideService.trackUserLocation(user);
-			}
-		}
+    // Ensure that all users have a location
+    tourGuideService.trackListUsersLocations(allUsers);
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();
@@ -100,18 +91,7 @@ public class TestPerformance {
 		allUsers = tourGuideService.getAllUsers();
 		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-		// Ensure that all users have visited the same attraction
-		// This is to ensure that rewards can be calculated
-		// If parallel processing is enabled, use the parallel method
-		// Otherwise, calculate rewards for each user sequentially
-		if(ApplicationConfiguration.PRALLEL_PROCESSING) {
-			rewardsService.calculateRewardsParallel(allUsers);
-		} else {
-			// Calculate rewards for each user sequentially
-			for (User user : allUsers) {
-				rewardsService.calculateRewards(user);
-			}
-		}
+    rewardsService.calculateRewardsListUsers(allUsers);
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();

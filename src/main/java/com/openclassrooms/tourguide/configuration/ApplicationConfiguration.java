@@ -6,8 +6,6 @@ public class ApplicationConfiguration {
 
   public static final int INTERNAL_USER_NUMBER = 250;
 
-  public static final boolean PRALLEL_PROCESSING = true;
-
   public static final int TOURGUIDE_PARALLEL_THREAD_NUMBER = 500;
 
   public static final int REWARDS_PARALLEL_THREAD_NUMBER = 500;
@@ -21,4 +19,6 @@ public class ApplicationConfiguration {
   public static final String TRIP_PRICER_API_KEY = "test-server-api-key";
 
   public static final int ATTRACTION_PROXIMITY = Integer.MAX_VALUE;
+
+  public static final int MAX_ATTRACTIONS_TO_SHOW = 5;
 }
