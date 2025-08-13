@@ -44,7 +44,9 @@ public class Tracker extends Thread {
       List<User> users = tourGuideService.getAllUsers();
       logger.debug("Begin Tracker. Tracking " + users.size() + " users.");
       stopWatch.start();
-      users.forEach(u -> tourGuideService.trackUserLocation(u));
+      //  users.forEach(u -> tourGuideService.trackUserLocation(u));
+      // the previous line is replaced by the following line to track all users at once
+      tourGuideService.trackListUsersLocations(users);
       stopWatch.stop();
       logger.debug("Tracker Time Elapsed: " + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()) + " seconds.");
       stopWatch.reset();
