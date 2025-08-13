@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
@@ -22,12 +23,12 @@ public class RewardsService {
   private final GpsUtil gpsUtil;
   private final RewardCentral rewardsCentral;
   // proximity in miles
-  private final int defaultProximityBuffer = 10;
+  private final int defaultProximityBuffer = ApplicationConfiguration.DEFAULT_PROXIMITY_BUFFER;
   private int proximityBuffer = defaultProximityBuffer;
-  private final int attractionProximityRange = 200;
+  private final int attractionProximityRange = ApplicationConfiguration.DEFAULT_PROXIMITY_RANGE;
 
   private final ExecutorService executor = Executors.newFixedThreadPool(
-          500);
+          ApplicationConfiguration.DEFAULT_REWARDS_SERVICE_NUMBER_OF_THREADS);
 
   public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
     this.gpsUtil = gpsUtil;

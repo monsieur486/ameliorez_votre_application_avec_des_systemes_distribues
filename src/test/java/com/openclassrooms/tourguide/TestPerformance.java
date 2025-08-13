@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
@@ -44,15 +45,13 @@ public class TestPerformance {
    * TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
    */
 
-  private static final int NUMBER_OF_USERS = 100000; // Adjust this number as needed for performance testing
-
   @Test
   public void highVolumeTrackLocation() {
     GpsUtil gpsUtil = new GpsUtil();
     RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
     // Users should be incremented up to 100,000, and test finishes within 15
     // minutes
-    InternalTestHelper.setInternalUserNumber(NUMBER_OF_USERS);
+    InternalTestHelper.setInternalUserNumber(ApplicationConfiguration.NUMBER_OF_USERS);
     TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
 
     List<User> allUsers = new ArrayList<>();
@@ -71,7 +70,7 @@ public class TestPerformance {
     System.out.println("highVolumeTrackLocation: Time Elapsed: "
             + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())
             + " seconds for "
-            + NUMBER_OF_USERS
+            + ApplicationConfiguration.NUMBER_OF_USERS
             + " users.");
     assertTrue(TimeUnit.MINUTES.toSeconds(15) >= TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
   }
@@ -83,7 +82,7 @@ public class TestPerformance {
 
     // Users should be incremented up to 100,000, and test finishes within 20
     // minutes
-    InternalTestHelper.setInternalUserNumber(NUMBER_OF_USERS);
+    InternalTestHelper.setInternalUserNumber(ApplicationConfiguration.NUMBER_OF_USERS);
     StopWatch stopWatch = new StopWatch();
     stopWatch.start();
     TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
@@ -106,7 +105,7 @@ public class TestPerformance {
     System.out.println("highVolumeGetRewards: Time Elapsed: "
             + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())
             + " seconds for "
-            + NUMBER_OF_USERS
+            + ApplicationConfiguration.NUMBER_OF_USERS
             + " users.");
     assertTrue(TimeUnit.MINUTES.toSeconds(20) >= TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
   }

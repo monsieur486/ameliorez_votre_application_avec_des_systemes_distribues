@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
 import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
@@ -45,7 +46,7 @@ public class TourGuideService {
   private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 
   private final ExecutorService executor = Executors.newFixedThreadPool(
-         500);
+          ApplicationConfiguration.DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS);
 
   public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
     this.gpsUtil = gpsUtil;
@@ -53,7 +54,7 @@ public class TourGuideService {
 
     Locale.setDefault(Locale.US);
 
-    if (testMode) {
+    if (ApplicationConfiguration.IS_TEST_MODE) {
       logger.info("TestMode enabled");
       logger.debug("Initializing users");
       initializeInternalUsers();
@@ -137,7 +138,7 @@ public class TourGuideService {
   public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
     List<AttractionNearbyUserDto> nearbyAttractions = new ArrayList<>();
     for (Attraction attraction : gpsUtil.getAttractions()) {
-      if (nearbyAttractions.size() < 5) {
+      if (nearbyAttractions.size() < ApplicationConfiguration.NREAR_BY_ATTRACTION_NUMBER) {
         int rewardPoints = rewardsService.getRewardPoints(attraction, user);
         double distance = rewardsService.getDistance(attraction, visitedLocation.location);
         AttractionNearbyUserDto attractionNearbyUserDto = new AttractionNearbyUserDto(attraction, visitedLocation, rewardPoints, distance);
