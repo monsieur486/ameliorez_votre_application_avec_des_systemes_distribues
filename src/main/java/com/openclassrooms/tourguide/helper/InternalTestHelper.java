@@ -1,9 +1,11 @@
 package com.openclassrooms.tourguide.helper;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
+
 public class InternalTestHelper {
 
   // Set this default up to 100,000 for testing
-  private static int internalUserNumber = 100;
+  private static int internalUserNumber = ApplicationConfiguration.NUMBER_OF_USERS;
 
   public static int getInternalUserNumber() {
     return internalUserNumber;

@@ -1,15 +1,21 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.configuration.ApplicationConfiguration;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class RewardsService {
@@ -17,9 +23,12 @@ public class RewardsService {
   private final GpsUtil gpsUtil;
   private final RewardCentral rewardsCentral;
   // proximity in miles
-  private final int defaultProximityBuffer = 10;
+  private final int defaultProximityBuffer = ApplicationConfiguration.DEFAULT_PROXIMITY_BUFFER;
   private int proximityBuffer = defaultProximityBuffer;
-  private final int attractionProximityRange = 200;
+  private final int attractionProximityRange = ApplicationConfiguration.DEFAULT_PROXIMITY_RANGE;
+
+  private final ExecutorService executor = Executors.newFixedThreadPool(
+          ApplicationConfiguration.DEFAULT_REWARDS_SERVICE_NUMBER_OF_THREADS);
 
   public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
     this.gpsUtil = gpsUtil;
@@ -47,6 +56,28 @@ public class RewardsService {
         }
       }
     }
+  }
+
+  public void calculateRewardsListUsers(List<User> users) {
+    List<CompletableFuture<Void>> futures = users.stream()
+            .map(user -> CompletableFuture.runAsync(() -> calculateRewards(user), executor))
+            .toList();
+
+    CompletableFuture<Void> allDone = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    try {
+      allDone.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Erreur lors du calcul des récompenses en parallèle", e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException("Exception lors du calcul des récompenses en parallèle", e);
+    }
+
+  }
+
+  @PreDestroy
+  public void shutdownExecutor() {
+    executor.shutdown();
   }
 
   public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
