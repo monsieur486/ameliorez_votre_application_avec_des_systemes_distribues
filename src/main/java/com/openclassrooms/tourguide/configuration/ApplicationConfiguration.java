@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApplicationConfiguration {
   public static final boolean IS_TEST_MODE = true;
-  public static final int NUMBER_OF_USERS = 100000;
+  public static final int NUMBER_OF_USERS = 100;
   public static final int DEFAULT_PROXIMITY_BUFFER = 10;
   public static final int DEFAULT_PROXIMITY_RANGE = 200;
 
