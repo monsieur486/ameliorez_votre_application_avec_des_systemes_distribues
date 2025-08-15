@@ -63,7 +63,7 @@ public class User {
   // This method is synchronized to ensure thread safety when adding locations
   // It uses a CopyOnWriteArrayList to allow safe concurrent modifications
   public void addToVisitedLocations(VisitedLocation visitedLocation) {
-    synchronized (visitedLocations) {
+     {
       // Update the latest location timestamp to the current time
       this.latestLocationTimestamp = new Date();
       // Add the visited location to the list of visited locations
@@ -86,7 +86,7 @@ public class User {
   // This method is synchronized to prevent concurrent modification issues
   public void addUserReward(UserReward userReward) {
     // Ensure thread safety when adding user rewards
-    synchronized (userRewards) {
+     {
       // Check if the reward for the attraction already exists
       // If it does not exist, add the new user reward
       // This prevents duplicates for the same attraction
