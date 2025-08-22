@@ -60,13 +60,7 @@ public class TestPerformance {
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 
-    if(TourGuideConfiguration.ENABLE_PARALLEL_PROCESSING) {
-      tourGuideService.trackListUsersLocations(allUsers);
-    } else {
-      for (User user : allUsers) {
-        tourGuideService.trackUserLocation(user);
-      }
-    }
+    tourGuideService.trackListUsersLocations(allUsers);
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();
@@ -96,11 +90,7 @@ public class TestPerformance {
 		allUsers = tourGuideService.getAllUsers();
 		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-    if(TourGuideConfiguration.ENABLE_PARALLEL_PROCESSING) {
-      rewardsService.calculateRewardsListUsers(allUsers);
-    } else {
-      allUsers.forEach(u -> rewardsService.calculateRewards(u));
-    }
+    rewardsService.calculateRewardsListUsers(allUsers);
 
 		for (User user : allUsers) {
 			assertTrue(user.getUserRewards().size() > 0);
