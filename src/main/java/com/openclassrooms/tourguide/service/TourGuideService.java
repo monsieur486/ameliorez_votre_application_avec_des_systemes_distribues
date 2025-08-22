@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.TourGuideConfiguration;
 import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
@@ -9,9 +10,14 @@ import com.openclassrooms.tourguide.user.UserReward;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,7 +37,9 @@ public class TourGuideService {
 	private final RewardsService rewardsService;
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
-	boolean testMode = true;
+
+  private final ExecutorService executor = Executors.newFixedThreadPool(
+          TourGuideConfiguration.DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS);
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -39,7 +47,7 @@ public class TourGuideService {
 		
 		Locale.setDefault(Locale.US);
 
-		if (testMode) {
+		if (TourGuideConfiguration.IS_TEST_MODE) {
 			logger.info("TestMode enabled");
 			logger.debug("Initializing users");
 			initializeInternalUsers();
@@ -99,10 +107,31 @@ public class TourGuideService {
 		return visitedLocation;
 	}
 
+  public void trackListUsersLocations(List<User> users) {
+    List<CompletableFuture<Void>> futures = users.stream()
+            .map(user -> CompletableFuture.runAsync(() -> trackUserLocation(user), executor))
+            .toList();
+
+    CompletableFuture<Void> allDone = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    try {
+      allDone.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Parallel tracking interrupted", e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException("Exception during parallel tracking", e);
+    }
+  }
+
+  @PreDestroy
+  public void shutdownExecutor() {
+    executor.shutdown();
+  }
+
   public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
     List<AttractionNearbyUserDto> nearbyAttractions = new ArrayList<>();
     for (Attraction attraction : gpsUtil.getAttractions()) {
-      if (nearbyAttractions.size() < 5) {
+      if (nearbyAttractions.size() < TourGuideConfiguration.NEAR_BY_ATTRACTION_NUMBER) {
         int rewardPoints = rewardsService.getRewardPoints(attraction, user);
         double distance = rewardsService.getDistance(attraction, visitedLocation.location);
         AttractionNearbyUserDto attractionNearbyUserDto = new AttractionNearbyUserDto(attraction, visitedLocation, rewardPoints, distance);
