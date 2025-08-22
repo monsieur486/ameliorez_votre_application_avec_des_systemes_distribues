@@ -1,7 +1,13 @@
 package com.openclassrooms.tourguide.service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import com.openclassrooms.tourguide.TourGuideConfiguration;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
 import gpsUtil.GpsUtil;
@@ -14,14 +20,17 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 @Service
 public class RewardsService {
-    private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
+  private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
 
 	// proximity in miles
-    private int defaultProximityBuffer = 10;
+  private int defaultProximityBuffer = TourGuideConfiguration.DEFAULT_PROXIMITY_BUFFER;
 	private int proximityBuffer = defaultProximityBuffer;
-	private int attractionProximityRange = 200;
+	private int attractionProximityRange = TourGuideConfiguration.DEFAULT_PROXIMITY_RANGE;
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
+
+  private final ExecutorService executor = Executors.newFixedThreadPool(
+          TourGuideConfiguration.DEFAULT_REWARDS_SERVICE_NUMBER_OF_THREADS);
 	
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
@@ -50,6 +59,28 @@ public class RewardsService {
 			}
 		}
 	}
+
+  public void calculateRewardsListUsers(List<User> users) {
+    List<CompletableFuture<Void>> futures = users.stream()
+            .map(user -> CompletableFuture.runAsync(() -> calculateRewards(user), executor))
+            .toList();
+
+    CompletableFuture<Void> allDone = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    try {
+      allDone.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Parallel tracking interrupted", e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException("Exception during parallel tracking", e);
+    }
+
+  }
+
+  @PreDestroy
+  public void shutdownExecutor() {
+    executor.shutdown();
+  }
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
