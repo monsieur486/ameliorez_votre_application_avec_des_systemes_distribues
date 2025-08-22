@@ -7,14 +7,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -79,14 +72,24 @@ public class TourGuideService {
 		}
 	}
 
-	public List<Provider> getTripDeals(User user) {
-		int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
-		List<Provider> providers = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
-				user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
-				user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
-		user.setTripDeals(providers);
-		return providers;
-	}
+  public List<Provider> getTripDeals(User user) {
+    int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
+    Set<Provider> providers = new HashSet<>();
+
+    // Ensure we have at least 10 providers, even if it means calling the TripPricer multiple times
+    while (providers.size() < 10) {
+      List<Provider> recupProviders = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
+              user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
+              user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
+      for (Provider provider : recupProviders) {
+        if (providers.size() < 10) {
+          providers.add(provider);
+        }
+      }
+    }
+
+    return new ArrayList<>(providers);
+  }
 
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
