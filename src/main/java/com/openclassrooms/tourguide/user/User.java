@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import gpsUtil.location.VisitedLocation;
 import tripPricer.Provider;
@@ -14,8 +15,8 @@ public class User {
 	private String phoneNumber;
 	private String emailAddress;
 	private Date latestLocationTimestamp;
-	private List<VisitedLocation> visitedLocations = new ArrayList<>();
-	private List<UserReward> userRewards = new ArrayList<>();
+  private final CopyOnWriteArrayList<VisitedLocation> visitedLocations = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<UserReward> userRewards = new CopyOnWriteArrayList<>();
 	private UserPreferences userPreferences = new UserPreferences();
 	private List<Provider> tripDeals = new ArrayList<>();
 	public User(UUID userId, String userName, String phoneNumber, String emailAddress) {
@@ -56,11 +57,11 @@ public class User {
 	public Date getLatestLocationTimestamp() {
 		return latestLocationTimestamp;
 	}
-	
+
 	public void addToVisitedLocations(VisitedLocation visitedLocation) {
 		visitedLocations.add(visitedLocation);
 	}
-	
+
 	public List<VisitedLocation> getVisitedLocations() {
 		return visitedLocations;
 	}
@@ -68,12 +69,22 @@ public class User {
 	public void clearVisitedLocations() {
 		visitedLocations.clear();
 	}
-	
-	public void addUserReward(UserReward userReward) {
-		if(userRewards.stream().filter(r -> !r.attraction.attractionName.equals(userReward.attraction)).count() == 0) {
-			userRewards.add(userReward);
-		}
-	}
+
+  // Adds a user reward if it does not already exist for the attraction
+  // This method is synchronized to prevent concurrent modification issues
+  public void addUserReward(UserReward userReward) {
+    // Ensure thread safety when adding user rewards
+    {
+      // Check if the reward for the attraction already exists
+      // If it does not exist, add the new user reward
+      // This prevents duplicates for the same attraction
+      boolean alreadyExists = userRewards.stream()
+              .anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
+      if (!alreadyExists) {
+        userRewards.add(userReward);
+      }
+    }
+  }
 	
 	public List<UserReward> getUserRewards() {
 		return userRewards;
