@@ -37,12 +37,8 @@ jobs:
       - name: Package application
         run: mvn clean package -DskipTests
 
-      - name: Upload packaged JAR
-        if: success()
+      - name: Publier le JAR généré
         uses: actions/upload-artifact@v4
         with:
-          name: app-jar
-          path: |
-            target/*.jar
-            !target/*-sources.jar
-            !target/*-javadoc.jar
+          name: application-jar
+          path: target/*.jar
