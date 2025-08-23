@@ -37,8 +37,9 @@ jobs:
       - name: Package application
         run: mvn clean package -DskipTests
 
-      - name: Publier le JAR généré
+      - name: Publish JAR artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: tourguide-jar
-          path: target/tourguide-0.0.1-SNAPSHOT.jar
+          path: target/tourguide-*.jar
