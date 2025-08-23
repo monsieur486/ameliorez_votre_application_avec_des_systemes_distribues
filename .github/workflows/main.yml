@@ -40,5 +40,5 @@ jobs:
       - name: Publier le JAR généré
         uses: actions/upload-artifact@v4
         with:
-          name: application-jar
-          path: target/*.jar
+          name: tourguide-jar
+          path: target/tourguide*.jar
