@@ -81,11 +81,21 @@ public class TourGuideService {
 
   public List<Provider> getTripDeals(User user) {
     int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
-    List<Provider> providers = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
-            user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
-            user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
-    user.setTripDeals(providers);
-    return providers;
+    Set<Provider> providers = new HashSet<>();
+
+    // Ensure we have at least 10 providers, even if it means calling the TripPricer multiple times
+    while (providers.size() < 10) {
+      List<Provider> recupProviders = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
+              user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
+              user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
+      for (Provider provider : recupProviders) {
+        if (providers.size() < 10) {
+          providers.add(provider);
+        }
+      }
+    }
+
+    return new ArrayList<>(providers);
   }
 
   public VisitedLocation trackUserLocation(User user) {
