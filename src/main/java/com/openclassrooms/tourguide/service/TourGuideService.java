@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.TourGuideConfiguration;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
@@ -45,7 +46,7 @@ public class TourGuideService {
 		
 		Locale.setDefault(Locale.US);
 
-		if (testMode) {
+		if (TourGuideConfiguration.IS_TEST_MODE) {
 			logger.info("TestMode enabled");
 			logger.debug("Initializing users");
 			initializeInternalUsers();
