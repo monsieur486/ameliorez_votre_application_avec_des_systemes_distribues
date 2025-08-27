@@ -10,6 +10,7 @@ import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,10 @@ import tripPricer.TripPricer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -39,6 +44,11 @@ public class TourGuideService {
   private final Map<String, User> internalUserMap = new HashMap<>();
   boolean testMode = true;
   private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
+
+  // Executor service for parallel tracking of user locations
+  // Using a fixed thread pool to limit the number of concurrent threads
+  private final ExecutorService executor = Executors.newFixedThreadPool(
+          TourGuideConfiguration.DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS);
 
   public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
     this.gpsUtil = gpsUtil;
@@ -104,6 +114,28 @@ public class TourGuideService {
     user.addToVisitedLocations(visitedLocation);
     rewardsService.calculateRewards(user);
     return visitedLocation;
+  }
+
+  // Track the location of a list of users in parallel
+  public void trackListUsersLocations(List<User> users) {
+    List<CompletableFuture<Void>> futures = users.stream()
+            .map(user -> CompletableFuture.runAsync(() -> trackUserLocation(user), executor))
+            .toList();
+
+    CompletableFuture<Void> allDone = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    try {
+      allDone.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Parallel tracking interrupted", e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException("Exception during parallel tracking", e);
+    }
+  }
+
+  @PreDestroy
+  public void shutdownExecutor() {
+    executor.shutdown();
   }
 
   public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {

@@ -44,7 +44,6 @@ public class TestPerformance {
    * TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
    */
 
-  @Disabled
   @Test
   public void highVolumeTrackLocation() {
     GpsUtil gpsUtil = new GpsUtil();
@@ -59,18 +58,23 @@ public class TestPerformance {
 
     StopWatch stopWatch = new StopWatch();
     stopWatch.start();
-    for (User user : allUsers) {
-      tourGuideService.trackUserLocation(user);
-    }
+//    for (User user : allUsers) {
+//      tourGuideService.trackUserLocation(user);
+//    }
+
+    // Using the new method that tracks a list of users in parallel
+    tourGuideService.trackListUsersLocations(allUsers);
     stopWatch.stop();
     tourGuideService.tracker.stopTracking();
 
     System.out.println("highVolumeTrackLocation: Time Elapsed: "
-            + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()) + " seconds.");
+            + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())
+            + " seconds for "
+            + TourGuideConfiguration.NUMBER_OF_USERS + " users"
+            + " users.");
     assertTrue(TimeUnit.MINUTES.toSeconds(15) >= TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
   }
 
-  @Disabled
   @Test
   public void highVolumeGetRewards() {
     GpsUtil gpsUtil = new GpsUtil();
@@ -88,7 +92,10 @@ public class TestPerformance {
     allUsers = tourGuideService.getAllUsers();
     allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-    allUsers.forEach(u -> rewardsService.calculateRewards(u));
+    // allUsers.forEach(u -> rewardsService.calculateRewards(u));
+
+    // Using the new method that calculates rewards for a list of users in parallel
+    rewardsService.calculateRewardsListUsers(allUsers);
 
     for (User user : allUsers) {
       assertTrue(user.getUserRewards().size() > 0);
@@ -96,8 +103,11 @@ public class TestPerformance {
     stopWatch.stop();
     tourGuideService.tracker.stopTracking();
 
-    System.out.println("highVolumeGetRewards: Time Elapsed: " + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())
-            + " seconds.");
+    System.out.println("highVolumeGetRewards: Time Elapsed: "
+            + TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())
+            + " seconds for "
+            + TourGuideConfiguration.NUMBER_OF_USERS + " users"
+            + " users.");
     assertTrue(TimeUnit.MINUTES.toSeconds(20) >= TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
   }
 
