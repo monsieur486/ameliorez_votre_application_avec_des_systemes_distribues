@@ -11,11 +11,14 @@ import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Service
 public class RewardsService {
@@ -49,12 +52,18 @@ public class RewardsService {
     List<VisitedLocation> userLocations = user.getVisitedLocations();
     List<Attraction> attractions = gpsUtil.getAttractions();
 
+    // Track attraction names already rewarded in a Set for O(1) lookups,
+    // instead of re-streaming all rewards for every (location, attraction) pair.
+    Set<String> rewardedAttractionNames = user.getUserRewards().stream()
+            .map(r -> r.attraction.attractionName)
+            .collect(Collectors.toCollection(HashSet::new));
+
     for (VisitedLocation visitedLocation : userLocations) {
       for (Attraction attraction : attractions) {
-        if (user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-          if (nearAttraction(visitedLocation, attraction)) {
-            user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
-          }
+        if (!rewardedAttractionNames.contains(attraction.attractionName)
+                && nearAttraction(visitedLocation, attraction)) {
+          user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+          rewardedAttractionNames.add(attraction.attractionName);
         }
       }
     }
