@@ -139,17 +139,18 @@ public class TourGuideService {
   }
 
   public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
-    List<AttractionNearbyUserDto> nearbyAttractions = new ArrayList<>();
-    for (Attraction attraction : gpsUtil.getAttractions()) {
-      if (nearbyAttractions.size() < TourGuideConfiguration.NEAR_BY_ATTRACTION_NUMBER) {
-        int rewardPoints = rewardsService.getRewardPoints(attraction, user);
-        double distance = rewardsService.getDistance(attraction, visitedLocation.location);
-        AttractionNearbyUserDto attractionNearbyUserDto = new AttractionNearbyUserDto(attraction, visitedLocation, rewardPoints, distance);
-        nearbyAttractions.add(attractionNearbyUserDto);
-      }
-    }
-
-    return nearbyAttractions;
+    // Sort all attractions by ascending distance to the user (cheap maths only),
+    // keep the closest N, then fetch reward points for those N only.
+    return gpsUtil.getAttractions().stream()
+            .sorted(Comparator.comparingDouble(
+                    attraction -> rewardsService.getDistance(attraction, visitedLocation.location)))
+            .limit(TourGuideConfiguration.NEAR_BY_ATTRACTION_NUMBER)
+            .map(attraction -> new AttractionNearbyUserDto(
+                    attraction,
+                    visitedLocation,
+                    rewardsService.getRewardPoints(attraction, user),
+                    rewardsService.getDistance(attraction, visitedLocation.location)))
+            .toList();
   }
 
   private void addShutDownHook() {
