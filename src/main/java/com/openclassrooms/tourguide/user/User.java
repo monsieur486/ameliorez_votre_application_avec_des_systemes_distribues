@@ -71,19 +71,14 @@ public class User {
     visitedLocations.clear();
   }
 
-  // Adds a user reward if it does not already exist for the attraction
-  // This method is synchronized to prevent concurrent modification issues
-  public void addUserReward(UserReward userReward) {
-    // Ensure thread safety when adding user rewards
-    {
-      // Check if the reward for the attraction already exists
-      // If it does not exist, add the new user reward
-      // This prevents duplicates for the same attraction
-      boolean alreadyExists = userRewards.stream()
-              .anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
-      if (!alreadyExists) {
-        userRewards.add(userReward);
-      }
+  // Adds a user reward only if one does not already exist for the same attraction.
+  // synchronized makes the check-then-add atomic, preventing duplicate rewards
+  // if the same user is ever updated from more than one thread.
+  public synchronized void addUserReward(UserReward userReward) {
+    boolean alreadyExists = userRewards.stream()
+            .anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
+    if (!alreadyExists) {
+      userRewards.add(userReward);
     }
   }
 

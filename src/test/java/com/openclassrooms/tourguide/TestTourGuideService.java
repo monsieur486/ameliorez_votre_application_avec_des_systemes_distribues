@@ -130,4 +130,37 @@ public class TestTourGuideService {
     assertEquals(10, providers.size());
   }
 
+  @Test
+  public void getNearbyAttractionsReturnsTheFiveClosest() {
+    GpsUtil gpsUtil = new GpsUtil();
+    RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
+    InternalTestHelper.setInternalUserNumber(0);
+    TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
+
+    User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
+    VisitedLocation visitedLocation = tourGuideService.trackUserLocation(user);
+
+    List<AttractionNearbyUserDto> attractions = tourGuideService.getNearByAttractions(visitedLocation, user);
+
+    // The five smallest distances among ALL attractions, computed independently.
+    List<Double> fiveSmallestDistances = gpsUtil.getAttractions().stream()
+            .map(a -> rewardsService.getDistance(a, visitedLocation.location))
+            .sorted()
+            .limit(5)
+            .toList();
+
+    tourGuideService.tracker.stopTracking();
+
+    // The returned distances must be sorted ascending...
+    List<Double> returnedDistances = attractions.stream()
+            .map(AttractionNearbyUserDto::getDistance)
+            .toList();
+    assertEquals(returnedDistances.stream().sorted().toList(), returnedDistances,
+            "Returned attractions must be sorted by ascending distance");
+
+    // ...and they must be the five closest ones.
+    assertEquals(fiveSmallestDistances, returnedDistances,
+            "Returned attractions must be the five closest to the user");
+  }
+
 }
