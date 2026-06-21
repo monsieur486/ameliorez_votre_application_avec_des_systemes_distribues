@@ -42,7 +42,6 @@ public class TourGuideService {
   // Database connection will be used for external users, but for testing purposes
   // internal users are provided and stored in memory
   private final Map<String, User> internalUserMap = new HashMap<>();
-  boolean testMode = true;
   private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 
   // Executor service for parallel tracking of user locations
