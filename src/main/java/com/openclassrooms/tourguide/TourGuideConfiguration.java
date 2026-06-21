@@ -1,8 +1,10 @@
 package com.openclassrooms.tourguide;
 
+
 public class TourGuideConfiguration {
+
+  // Constructor
   private TourGuideConfiguration() {
-    /* This utility class should not be instantiated */
   }
 
   public static final boolean IS_TEST_MODE = true;
