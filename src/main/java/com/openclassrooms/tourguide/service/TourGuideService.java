@@ -95,7 +95,9 @@ public class TourGuideService {
     Set<Provider> providers = new HashSet<>();
 
     // Ensure we have at least 10 providers, even if it means calling the TripPricer multiple times
-    while (providers.size() < 10) {
+    int attempts = 0;
+    while (providers.size() < 10 && attempts < TourGuideConfiguration.MAX_TRIP_DEALS_ATTEMPTS) {
+      attempts++;
       List<Provider> recupProviders = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
               user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
               user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);

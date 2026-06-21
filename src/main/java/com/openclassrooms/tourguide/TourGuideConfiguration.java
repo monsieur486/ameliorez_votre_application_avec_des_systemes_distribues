@@ -11,4 +11,6 @@ public class TourGuideConfiguration {
   public static final int DEFAULT_REWARDS_SERVICE_NUMBER_OF_THREADS = 200;
   public static final int DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS = 200;
 
+  public static final int MAX_TRIP_DEALS_ATTEMPTS = 100;
+
 }
