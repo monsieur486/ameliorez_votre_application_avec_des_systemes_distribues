@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide;
 
+import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
@@ -29,7 +30,6 @@ public class TourGuideController {
     return tourGuideService.getUserLocation(getUser(userName));
   }
 
-  //  TODO: Change this method to no longer return a List of Attractions.
   //  Instead: Get the closest five tourist attractions to the user - no matter how far away they are.
   //  Return a new JSON object that contains:
   // Name of Tourist attraction,
@@ -39,9 +39,10 @@ public class TourGuideController {
   // The reward points for visiting each Attraction.
   //    Note: Attraction reward points can be gathered from RewardsCentral
   @RequestMapping("/getNearbyAttractions")
-  public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
-    VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    return tourGuideService.getNearByAttractions(visitedLocation);
+  public List<AttractionNearbyUserDto> getNearbyAttractions(@RequestParam String userName) {
+    User user = tourGuideService.getUser(userName);
+    VisitedLocation visitedLocation = tourGuideService.getUserLocation(user);
+    return tourGuideService.getNearByAttractions(visitedLocation, user);
   }
 
   @RequestMapping("/getRewards")
