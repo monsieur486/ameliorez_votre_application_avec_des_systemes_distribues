@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide;
 
+import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
@@ -91,7 +92,6 @@ public class TestTourGuideService {
     assertEquals(user.getUserId(), visitedLocation.userId);
   }
 
-  @Disabled // Not yet implemented
   @Test
   public void getNearbyAttractions() {
     GpsUtil gpsUtil = new GpsUtil();
@@ -102,7 +102,14 @@ public class TestTourGuideService {
     User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
     VisitedLocation visitedLocation = tourGuideService.trackUserLocation(user);
 
-    List<Attraction> attractions = tourGuideService.getNearByAttractions(visitedLocation);
+    // Instead: Get the closest five tourist attractions to the user - no matter how far away they are.
+    // Return a new JSON object that contains:
+    // Name of Tourist attraction,
+    // Tourist attractions lat/long,
+    // The user's location lat/long,
+    // The distance in miles between the user's location and each of the attractions.
+    // The reward points for visiting each Attraction.
+    List<AttractionNearbyUserDto> attractions = tourGuideService.getNearByAttractions(visitedLocation, user);
 
     tourGuideService.tracker.stopTracking();
 
