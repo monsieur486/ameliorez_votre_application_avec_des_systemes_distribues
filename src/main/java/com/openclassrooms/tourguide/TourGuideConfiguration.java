@@ -7,4 +7,8 @@ public class TourGuideConfiguration {
   public static final int DEFAULT_PROXIMITY_RANGE = 200;
 
   public static final int NEAR_BY_ATTRACTION_NUMBER = 5;
+
+  public static final int DEFAULT_REWARDS_SERVICE_NUMBER_OF_THREADS = 200;
+  public static final int DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS = 200;
+
 }
