@@ -1,0 +1,12 @@
+logging:
+  level:
+    com.openclassrooms.tourguide: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,threaddump
+  endpoint:
+    health:
+      show-details: always
