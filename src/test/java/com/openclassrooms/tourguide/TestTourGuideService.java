@@ -153,7 +153,7 @@ public class TestTourGuideService {
 
     // The returned distances must be sorted ascending...
     List<Double> returnedDistances = attractions.stream()
-            .map(AttractionNearbyUserDto::getDistance)
+            .map(AttractionNearbyUserDto::distance)
             .toList();
     assertEquals(returnedDistances.stream().sorted().toList(), returnedDistances,
             "Returned attractions must be sorted by ascending distance");
