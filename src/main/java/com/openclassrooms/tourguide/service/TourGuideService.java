@@ -2,12 +2,11 @@ package com.openclassrooms.tourguide.service;
 
 import com.openclassrooms.tourguide.TourGuideConfiguration;
 import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
+import com.openclassrooms.tourguide.exception.ParallelProcessingException;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
-import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
 import jakarta.annotation.PreDestroy;
@@ -19,36 +18,59 @@ import tripPricer.TripPricer;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Service principal de TourGuide : suivi de la localisation des utilisateurs,
+ * attractions proches et offres de voyage. En mode test, une base d'utilisateurs
+ * internes est générée en mémoire.
+ *
+ * <p><b>Exemple :</b> {@code getUserLocation(user)} retourne la dernière
+ * localisation connue, ou la calcule si l'historique est vide.</p>
+ */
 @Service
 public class TourGuideService {
-  /**********************************************************************************
-   *
-   * Methods Below: For Internal Testing
-   *
-   **********************************************************************************/
-  private static final String tripPricerApiKey = "test-server-api-key";
+
+  private static final String TRIP_PRICER_API_KEY = "test-server-api-key";
+  private static final int TRIP_DEALS_TARGET = 10;
+  private static final Logger LOGGER = LoggerFactory.getLogger(TourGuideService.class);
+
   public final Tracker tracker;
   private final GpsUtil gpsUtil;
   private final RewardsService rewardsService;
   private final TripPricer tripPricer = new TripPricer();
-  // Database connection will be used for external users, but for testing purposes
-  // internal users are provided and stored in memory
+  private final Random random = new Random();
+  // Les utilisateurs externes viendraient d'une base ; en test, ils sont en mémoire.
   private final Map<String, User> internalUserMap = new HashMap<>();
-  private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 
-  // Executor service for parallel tracking of user locations
-  // Using a fixed thread pool to limit the number of concurrent threads
+  // Pool de threads borné pour le suivi parallèle des localisations.
   private final ExecutorService executor = Executors.newFixedThreadPool(
           TourGuideConfiguration.DEFAULT_TOUR_GUIDE_SERVICE_NUMBER_OF_THREADS);
 
+  /**
+   * Construit le service, initialise les utilisateurs internes en mode test et
+   * démarre le suivi périodique.
+   *
+   * <p><b>Exemple :</b> {@code new TourGuideService(new GpsUtil(), rewardsService)}.</p>
+   *
+   * @param gpsUtil        fournisseur des localisations et attractions
+   * @param rewardsService service de calcul des récompenses
+   */
   public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
     this.gpsUtil = gpsUtil;
     this.rewardsService = rewardsService;
@@ -56,52 +78,104 @@ public class TourGuideService {
     Locale.setDefault(Locale.US);
 
     if (TourGuideConfiguration.IS_TEST_MODE) {
-      logger.info("TestMode enabled");
-      logger.debug("Initializing users");
+      LOGGER.info("mode test activé");
       initializeInternalUsers();
-      logger.debug("Finished initializing users");
     }
     tracker = new Tracker(this);
     addShutDownHook();
   }
 
+  /**
+   * Retourne les récompenses d'un utilisateur.
+   *
+   * <p><b>Exemple :</b> {@code getUserRewards(user)} retourne la liste, vide si
+   * aucune récompense n'a encore été attribuée.</p>
+   *
+   * @param user utilisateur concerné
+   * @return la liste des récompenses
+   */
   public List<UserReward> getUserRewards(User user) {
     return user.getUserRewards();
   }
 
+  /**
+   * Retourne la localisation courante d'un utilisateur : la dernière connue, ou
+   * une nouvelle localisation suivie si l'historique est vide.
+   *
+   * <p><b>Exemple :</b> pour un nouvel utilisateur, déclenche un suivi et retourne
+   * la localisation obtenue.</p>
+   *
+   * @param user utilisateur concerné
+   * @return la localisation courante
+   */
   public VisitedLocation getUserLocation(User user) {
-    VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
-            : trackUserLocation(user);
-    return visitedLocation;
+    return user.getVisitedLocations().isEmpty()
+            ? trackUserLocation(user)
+            : user.getLastVisitedLocation();
   }
 
+  /**
+   * Retourne un utilisateur par son nom.
+   *
+   * <p><b>Exemple :</b> {@code getUser("jon")} retourne l'utilisateur « jon », ou
+   * {@code null} s'il est inconnu.</p>
+   *
+   * @param userName nom de l'utilisateur recherché
+   * @return l'utilisateur correspondant, ou {@code null}
+   */
   public User getUser(String userName) {
     return internalUserMap.get(userName);
   }
 
+  /**
+   * Retourne tous les utilisateurs connus.
+   *
+   * <p><b>Exemple :</b> {@code getAllUsers()} retourne la liste des utilisateurs
+   * internes en mode test.</p>
+   *
+   * @return la liste des utilisateurs
+   */
   public List<User> getAllUsers() {
-    return internalUserMap.values().stream().collect(Collectors.toList());
+    return new ArrayList<>(internalUserMap.values());
   }
 
+  /**
+   * Ajoute un utilisateur s'il n'est pas déjà présent.
+   *
+   * <p><b>Exemple :</b> un second ajout du même nom d'utilisateur est ignoré.</p>
+   *
+   * @param user utilisateur à ajouter
+   */
   public void addUser(User user) {
     if (!internalUserMap.containsKey(user.getUserName())) {
       internalUserMap.put(user.getUserName(), user);
     }
   }
 
+  /**
+   * Retourne les offres de voyage d'un utilisateur (au moins dix fournisseurs).
+   *
+   * <p><b>Exemple :</b> {@code getTripDeals(user)} retourne dix offres en
+   * appelant TripPricer autant de fois que nécessaire.</p>
+   *
+   * @param user utilisateur concerné
+   * @return la liste des offres
+   */
   public List<Provider> getTripDeals(User user) {
-    int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
+    int cumulativeRewardPoints = user.getUserRewards().stream()
+            .mapToInt(UserReward::getRewardPoints)
+            .sum();
     Set<Provider> providers = new HashSet<>();
 
-    // Ensure we have at least 10 providers, even if it means calling the TripPricer multiple times
+    // On garantit au moins dix fournisseurs, quitte à rappeler TripPricer plusieurs fois.
     int attempts = 0;
-    while (providers.size() < 10 && attempts < TourGuideConfiguration.MAX_TRIP_DEALS_ATTEMPTS) {
+    while (providers.size() < TRIP_DEALS_TARGET && attempts < TourGuideConfiguration.MAX_TRIP_DEALS_ATTEMPTS) {
       attempts++;
-      List<Provider> recupProviders = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
+      List<Provider> recupProviders = tripPricer.getPrice(TRIP_PRICER_API_KEY, user.getUserId(),
               user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
-              user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
+              user.getUserPreferences().getTripDuration(), cumulativeRewardPoints);
       for (Provider provider : recupProviders) {
-        if (providers.size() < 10) {
+        if (providers.size() < TRIP_DEALS_TARGET) {
           providers.add(provider);
         }
       }
@@ -110,6 +184,16 @@ public class TourGuideService {
     return new ArrayList<>(providers);
   }
 
+  /**
+   * Suit la localisation d'un utilisateur, l'ajoute à son historique et calcule
+   * ses récompenses.
+   *
+   * <p><b>Exemple :</b> {@code trackUserLocation(user)} retourne la localisation
+   * fraîchement obtenue auprès de GpsUtil.</p>
+   *
+   * @param user utilisateur à suivre
+   * @return la localisation suivie
+   */
   public VisitedLocation trackUserLocation(User user) {
     VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
     user.addToVisitedLocations(visitedLocation);
@@ -117,8 +201,17 @@ public class TourGuideService {
     return visitedLocation;
   }
 
-  // Track the location of a list of users in parallel
+  /**
+   * Suit en parallèle la localisation d'une liste d'utilisateurs.
+   *
+   * <p><b>Exemple :</b> {@code trackListUsersLocations(users)} traite tous les
+   * utilisateurs via un pool de threads borné et attend la fin du traitement.</p>
+   *
+   * @param users utilisateurs à suivre
+   * @throws ParallelProcessingException si le suivi échoue ou est interrompu
+   */
   public void trackListUsersLocations(List<User> users) {
+    LOGGER.info("suivi parallèle de {} utilisateurs", users.size());
     List<CompletableFuture<Void>> futures = users.stream()
             .map(user -> CompletableFuture.runAsync(() -> trackUserLocation(user), executor))
             .toList();
@@ -128,20 +221,37 @@ public class TourGuideService {
       allDone.get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new RuntimeException("Parallel tracking interrupted", e);
+      throw new ParallelProcessingException("suivi parallèle interrompu", e);
     } catch (ExecutionException e) {
-      throw new RuntimeException("Exception during parallel tracking", e);
+      LOGGER.error("échec du suivi parallèle des localisations", e);
+      throw new ParallelProcessingException("échec du suivi parallèle des localisations", e);
     }
   }
 
+  /**
+   * Arrête proprement le pool de threads à la destruction du bean.
+   *
+   * <p><b>Exemple :</b> appelé automatiquement par Spring à l'arrêt du contexte.</p>
+   */
   @PreDestroy
   public void shutdownExecutor() {
     executor.shutdown();
   }
 
+  /**
+   * Retourne les cinq attractions les plus proches de l'utilisateur, triées par
+   * distance croissante, avec leurs points de récompense.
+   *
+   * <p><b>Exemple :</b> {@code getNearByAttractions(localisation, user)} retourne
+   * cinq attractions, quelle que soit leur distance réelle.</p>
+   *
+   * @param visitedLocation localisation courante de l'utilisateur
+   * @param user            utilisateur concerné
+   * @return les cinq attractions les plus proches
+   */
   public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
-    // Sort all attractions by ascending distance to the user (cheap maths only),
-    // keep the closest N, then fetch reward points for those N only.
+    // On trie toutes les attractions par distance croissante (calcul peu coûteux),
+    // on garde les N plus proches, puis on récupère les points pour ces N seulement.
     return gpsUtil.getAttractions().stream()
             .sorted(Comparator.comparingDouble(
                     attraction -> rewardsService.getDistance(attraction, visitedLocation.location)))
@@ -154,14 +264,12 @@ public class TourGuideService {
             .toList();
   }
 
+  // Enregistre un hook d'arrêt JVM qui stoppe le suivi périodique.
   private void addShutDownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        tracker.stopTracking();
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(tracker::stopTracking));
   }
 
+  // Génère les utilisateurs internes de test avec un historique de localisations.
   private void initializeInternalUsers() {
     IntStream.range(0, InternalTestHelper.getInternalUserNumber()).forEach(i -> {
       String userName = "internalUser" + i;
@@ -172,30 +280,33 @@ public class TourGuideService {
 
       internalUserMap.put(userName, user);
     });
-    logger.debug("Created " + InternalTestHelper.getInternalUserNumber() + " internal test users.");
+    LOGGER.debug("{} utilisateurs internes de test créés", InternalTestHelper.getInternalUserNumber());
   }
 
+  // Ajoute trois localisations aléatoires à l'historique d'un utilisateur.
   private void generateUserLocationHistory(User user) {
-    IntStream.range(0, 3).forEach(i -> {
-      user.addToVisitedLocations(new VisitedLocation(user.getUserId(),
-              new Location(generateRandomLatitude(), generateRandomLongitude()), getRandomTime()));
-    });
+    IntStream.range(0, 3).forEach(i ->
+            user.addToVisitedLocations(new VisitedLocation(user.getUserId(),
+                    new Location(generateRandomLatitude(), generateRandomLongitude()), getRandomTime())));
   }
 
+  // Tire une longitude aléatoire valide.
   private double generateRandomLongitude() {
     double leftLimit = -180;
     double rightLimit = 180;
-    return leftLimit + new Random().nextDouble() * (rightLimit - leftLimit);
+    return leftLimit + random.nextDouble() * (rightLimit - leftLimit);
   }
 
+  // Tire une latitude aléatoire valide.
   private double generateRandomLatitude() {
     double leftLimit = -85.05112878;
     double rightLimit = 85.05112878;
-    return leftLimit + new Random().nextDouble() * (rightLimit - leftLimit);
+    return leftLimit + random.nextDouble() * (rightLimit - leftLimit);
   }
 
+  // Tire un instant aléatoire dans les trente derniers jours.
   private Date getRandomTime() {
-    LocalDateTime localDateTime = LocalDateTime.now().minusDays(new Random().nextInt(30));
+    LocalDateTime localDateTime = LocalDateTime.now().minusDays(random.nextInt(30));
     return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
   }
 
