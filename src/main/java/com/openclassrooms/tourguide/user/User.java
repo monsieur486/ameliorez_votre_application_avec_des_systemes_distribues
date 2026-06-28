@@ -1,25 +1,37 @@
 package com.openclassrooms.tourguide.user;
 
 import gpsUtil.location.VisitedLocation;
-import tripPricer.Provider;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Utilisateur du service TourGuide : identité, historique des localisations
+ * visitées, récompenses gagnées et préférences de voyage.
+ *
+ * <p><b>Exemple :</b> {@code new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com")}
+ * crée un utilisateur sans localisation ni récompense.</p>
+ */
 public class User {
   private final UUID userId;
   private final String userName;
   private String phoneNumber;
   private String emailAddress;
-  private Date latestLocationTimestamp;
-  private final CopyOnWriteArrayList<VisitedLocation> visitedLocations = new CopyOnWriteArrayList<>();
-  private final CopyOnWriteArrayList<UserReward> userRewards = new CopyOnWriteArrayList<>();
+  private final List<VisitedLocation> visitedLocations = new CopyOnWriteArrayList<>();
+  private final List<UserReward> userRewards = new CopyOnWriteArrayList<>();
   private UserPreferences userPreferences = new UserPreferences();
-  private List<Provider> tripDeals = new ArrayList<>();
 
+  /**
+   * Construit un utilisateur.
+   *
+   * <p><b>Exemple :</b> {@code new User(id, "jon", "000", "jon@tourGuide.com")}.</p>
+   *
+   * @param userId       identifiant unique de l'utilisateur
+   * @param userName     nom d'utilisateur (clé fonctionnelle)
+   * @param phoneNumber  numéro de téléphone
+   * @param emailAddress adresse e-mail
+   */
   public User(UUID userId, String userName, String phoneNumber, String emailAddress) {
     this.userId = userId;
     this.userName = userName;
@@ -51,14 +63,14 @@ public class User {
     this.emailAddress = emailAddress;
   }
 
-  public Date getLatestLocationTimestamp() {
-    return latestLocationTimestamp;
-  }
-
-  public void setLatestLocationTimestamp(Date latestLocationTimestamp) {
-    this.latestLocationTimestamp = latestLocationTimestamp;
-  }
-
+  /**
+   * Ajoute une localisation à l'historique des lieux visités.
+   *
+   * <p><b>Exemple :</b> {@code user.addToVisitedLocations(localisation)} ajoute la
+   * localisation en fin d'historique.</p>
+   *
+   * @param visitedLocation localisation visitée à mémoriser
+   */
   public void addToVisitedLocations(VisitedLocation visitedLocation) {
     visitedLocations.add(visitedLocation);
   }
@@ -67,13 +79,17 @@ public class User {
     return visitedLocations;
   }
 
-  public void clearVisitedLocations() {
-    visitedLocations.clear();
-  }
-
-  // Adds a user reward only if one does not already exist for the same attraction.
-  // synchronized makes the check-then-add atomic, preventing duplicate rewards
-  // if the same user is ever updated from more than one thread.
+  /**
+   * Ajoute une récompense uniquement si aucune n'existe déjà pour la même attraction.
+   *
+   * <p><b>Exemple :</b> deux appels avec la même attraction n'enregistrent qu'une
+   * seule récompense.</p>
+   *
+   * <p>{@code synchronized} rend le contrôle-puis-ajout atomique : cela évite les
+   * doublons si le même utilisateur est mis à jour depuis plusieurs threads.</p>
+   *
+   * @param userReward récompense candidate à ajouter
+   */
   public synchronized void addUserReward(UserReward userReward) {
     boolean alreadyExists = userRewards.stream()
             .anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
@@ -94,16 +110,18 @@ public class User {
     this.userPreferences = userPreferences;
   }
 
+  /**
+   * Retourne la dernière localisation visitée.
+   *
+   * <p><b>Exemple :</b> après deux ajouts, {@code getLastVisitedLocation()} retourne
+   * le second ; un appel sur un historique vide lève
+   * {@link IndexOutOfBoundsException}.</p>
+   *
+   * @return la localisation la plus récemment ajoutée
+   * @throws IndexOutOfBoundsException si aucune localisation n'a été visitée
+   */
   public VisitedLocation getLastVisitedLocation() {
     return visitedLocations.get(visitedLocations.size() - 1);
-  }
-
-  public List<Provider> getTripDeals() {
-    return tripDeals;
-  }
-
-  public void setTripDeals(List<Provider> tripDeals) {
-    this.tripDeals = tripDeals;
   }
 
 }

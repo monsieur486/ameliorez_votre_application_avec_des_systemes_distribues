@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<ruleset name="Style maison TourGuide"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+                             https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    Règles PMD ciblées : on garde les contrôles à forte valeur (bugs probables,
+    bonnes pratiques, complexité) et on écarte les règles bruyantes ou inadaptées
+    à cet exercice (literals dupliqués de test, usage assumé de Thread, etc.).
+  </description>
+
+  <!-- Bonnes pratiques : code mort, catch vide, etc. -->
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="GuardLogStatement"/>
+    <exclude name="JUnitTestsShouldIncludeAssert"/>
+    <exclude name="AbstractClassWithoutAbstractMethod"/>
+    <exclude name="AccessorMethodGeneration"/>
+  </rule>
+
+  <!-- Pièges fréquents (bugs probables). -->
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <exclude name="AvoidDuplicateLiterals"/>
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <exclude name="UseLocaleWithCaseConversions"/>
+  </rule>
+
+  <!-- Conception : complexité, longueurs, nombre de paramètres. -->
+  <rule ref="category/java/design.xml">
+    <exclude name="LawOfDemeter"/>
+    <exclude name="LoosePackageCoupling"/>
+    <exclude name="ExcessiveImports"/>
+    <exclude name="TooManyMethods"/>
+    <exclude name="AvoidCatchingGenericException"/>
+    <exclude name="UseUtilityClass"/>
+    <!-- Modèles et configuration sont des porteurs de données assumés. -->
+    <exclude name="DataClass"/>
+  </rule>
+
+  <!-- Performance. -->
+  <rule ref="category/java/performance.xml">
+    <!-- Créer des objets du domaine dans une boucle est parfois inévitable. -->
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+  </rule>
+
+</ruleset>

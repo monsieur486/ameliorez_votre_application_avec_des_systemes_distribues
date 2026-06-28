@@ -3,97 +3,52 @@ package com.openclassrooms.tourguide.dto;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
 
-public class AttractionNearbyUserDto {
-  private String attractionName;
-  private double attractionLatitude;
-  private double attractionLongitude;
-  private double userLatitude;
-  private double userLongitude;
-  private double distance;
-  private int rewardPoints;
+/**
+ * Représentation, exposée par l'API, d'une attraction proche d'un utilisateur :
+ * nom et coordonnées de l'attraction, coordonnées de l'utilisateur, distance en
+ * miles et points de récompense.
+ *
+ * <p><b>Exemple :</b> sérialisé en JSON sous la forme
+ * {@code {"attractionName":"Disneyland","distance":12.3,"rewardPoints":100,...}}.</p>
+ *
+ * @param attractionName      nom de l'attraction
+ * @param attractionLatitude  latitude de l'attraction
+ * @param attractionLongitude longitude de l'attraction
+ * @param userLatitude        latitude de l'utilisateur
+ * @param userLongitude       longitude de l'utilisateur
+ * @param distance            distance en miles entre l'utilisateur et l'attraction
+ * @param rewardPoints        points de récompense pour la visite de l'attraction
+ */
+public record AttractionNearbyUserDto(
+        String attractionName,
+        double attractionLatitude,
+        double attractionLongitude,
+        double userLatitude,
+        double userLongitude,
+        double distance,
+        int rewardPoints) {
 
-  public AttractionNearbyUserDto() {
-  }
-
+  /**
+   * Construit le DTO à partir des objets du domaine.
+   *
+   * <p><b>Exemple :</b> {@code new AttractionNearbyUserDto(attraction, localisation, 100, 12.3)}
+   * recopie les coordonnées de l'attraction et de la localisation.</p>
+   *
+   * @param attraction      attraction proche
+   * @param visitedLocation localisation courante de l'utilisateur
+   * @param rewardPoints    points de récompense de l'attraction
+   * @param distance        distance en miles entre l'utilisateur et l'attraction
+   */
   public AttractionNearbyUserDto(Attraction attraction,
                                  VisitedLocation visitedLocation,
                                  int rewardPoints,
                                  double distance) {
-    this.attractionName = attraction.attractionName;
-    this.attractionLatitude = attraction.latitude;
-    this.attractionLongitude = attraction.longitude;
-    this.userLatitude = visitedLocation.location.latitude;
-    this.userLongitude = visitedLocation.location.longitude;
-    this.distance = distance;
-    this.rewardPoints = rewardPoints;
-  }
-
-  public String getAttractionName() {
-    return attractionName;
-  }
-
-  public void setAttractionName(String attractionName) {
-    this.attractionName = attractionName;
-  }
-
-  public double getAttractionLatitude() {
-    return attractionLatitude;
-  }
-
-  public void setAttractionLatitude(double attractionLatitude) {
-    this.attractionLatitude = attractionLatitude;
-  }
-
-  public double getAttractionLongitude() {
-    return attractionLongitude;
-  }
-
-  public void setAttractionLongitude(double attractionLongitude) {
-    this.attractionLongitude = attractionLongitude;
-  }
-
-  public double getUserLatitude() {
-    return userLatitude;
-  }
-
-  public void setUserLatitude(double userLatitude) {
-    this.userLatitude = userLatitude;
-  }
-
-  public double getUserLongitude() {
-    return userLongitude;
-  }
-
-  public void setUserLongitude(double userLongitude) {
-    this.userLongitude = userLongitude;
-  }
-
-  public double getDistance() {
-    return distance;
-  }
-
-  public void setDistance(double distance) {
-    this.distance = distance;
-  }
-
-  public int getRewardPoints() {
-    return rewardPoints;
-  }
-
-  public void setRewardPoints(int rewardPoints) {
-    this.rewardPoints = rewardPoints;
-  }
-
-  @Override
-  public String toString() {
-    return "AttractionNearbyUserDto{" +
-            "attractionName='" + attractionName + '\'' +
-            ", attractionLatitude=" + attractionLatitude +
-            ", attractionLongitude=" + attractionLongitude +
-            ", userLatitude=" + userLatitude +
-            ", userLongitude=" + userLongitude +
-            ", distance=" + distance +
-            ", rewardPoints=" + rewardPoints +
-            '}';
+    this(attraction.attractionName,
+            attraction.latitude,
+            attraction.longitude,
+            visitedLocation.location.latitude,
+            visitedLocation.location.longitude,
+            distance,
+            rewardPoints);
   }
 }
