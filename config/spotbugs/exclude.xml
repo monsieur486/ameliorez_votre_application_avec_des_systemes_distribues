@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Exclusions SpotBugs : faux positifs justifiés uniquement.
+-->
+<FindBugsFilter>
+
+  <!--
+    Injection de dépendances : stocker un collaborateur injecté par Spring
+    (service, contrôleur, tracker) n'est pas une fuite de représentation.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Or>
+      <Class name="com.openclassrooms.tourguide.TourGuideController"/>
+      <Class name="com.openclassrooms.tourguide.service.TourGuideService"/>
+      <Class name="com.openclassrooms.tourguide.service.Tracker"/>
+    </Or>
+  </Match>
+
+  <!--
+    Modèle de domaine : les collections de l'utilisateur (localisations,
+    récompenses) sont volontairement exposées en direct, car le calcul des
+    récompenses les lit et les enrichit en place (copies trop coûteuses à
+    l'échelle des tests de charge).
+  -->
+  <Match>
+    <Class name="com.openclassrooms.tourguide.user.User"/>
+    <Or>
+      <Bug pattern="EI_EXPOSE_REP"/>
+      <Bug pattern="EI_EXPOSE_REP2"/>
+    </Or>
+  </Match>
+
+  <!--
+    Génération de données de test (localisations, horodatages aléatoires) :
+    l'aléa n'a aucun usage sécuritaire, java.util.Random convient.
+  -->
+  <Match>
+    <Class name="com.openclassrooms.tourguide.service.TourGuideService"/>
+    <Bug pattern="PREDICTABLE_RANDOM"/>
+  </Match>
+
+</FindBugsFilter>
