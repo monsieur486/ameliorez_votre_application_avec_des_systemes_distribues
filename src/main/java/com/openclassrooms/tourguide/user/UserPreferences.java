@@ -1,23 +1,17 @@
 package com.openclassrooms.tourguide.user;
 
+/**
+ * Préférences de voyage d'un utilisateur, utilisées pour le calcul des offres :
+ * durée du séjour, nombre d'adultes et nombre d'enfants.
+ *
+ * <p><b>Exemple :</b> par défaut, un séjour d'un jour pour un adulte et aucun
+ * enfant.</p>
+ */
 public class UserPreferences {
 
-  private int attractionProximity = Integer.MAX_VALUE;
   private int tripDuration = 1;
-  private int ticketQuantity = 1;
   private int numberOfAdults = 1;
-  private int numberOfChildren = 0;
-
-  public UserPreferences() {
-  }
-
-  public int getAttractionProximity() {
-    return attractionProximity;
-  }
-
-  public void setAttractionProximity(int attractionProximity) {
-    this.attractionProximity = attractionProximity;
-  }
+  private int numberOfChildren;
 
   public int getTripDuration() {
     return tripDuration;
@@ -25,14 +19,6 @@ public class UserPreferences {
 
   public void setTripDuration(int tripDuration) {
     this.tripDuration = tripDuration;
-  }
-
-  public int getTicketQuantity() {
-    return ticketQuantity;
-  }
-
-  public void setTicketQuantity(int ticketQuantity) {
-    this.ticketQuantity = ticketQuantity;
   }
 
   public int getNumberOfAdults() {
