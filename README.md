@@ -56,7 +56,7 @@ le dépôt local depuis les JAR de `libs/` :
 ## Build & tests
 
 ```bash
-./mvnw clean verify      # compile, exécute les tests et construit le JAR exécutable
+./mvnw clean verify      # compile, exécute les tests (hors charge) et construit le JAR
 ```
 
 Le JAR produit se trouve dans `target/tourguide-<version>.jar` et se lance avec
@@ -65,8 +65,15 @@ Le JAR produit se trouve dans `target/tourguide-<version>.jar` et se lance avec
 ### Tests de performance
 
 Les tests `highVolumeTrackLocation` et `highVolumeGetRewards` valident le passage à
-l'échelle (cibles : 100 000 utilisateurs en moins de 15 et 20 minutes). Par défaut ils
-tournent sur **100 utilisateurs** (build rapide) ; pour reproduire la mesure à grande
+l'échelle (cibles : 100 000 utilisateurs en moins de 15 et 20 minutes). Ils sont taggés
+`@Tag("performance")` et **exclus du build par défaut** (pour garder `verify` rapide et la
+CI en quelques secondes). Pour les lancer :
+
+```bash
+./mvnw test -Pperformance
+```
+
+Ils tournent sur **100 utilisateurs** par défaut ; pour reproduire la mesure à grande
 échelle, porter la constante `NUMBER_OF_USERS` à `100000` dans
 `src/test/java/com/openclassrooms/tourguide/TestPerformance.java`.
 
@@ -146,4 +153,4 @@ git push origin v1.0.0
 
 ## Version
 
-**1.0.0**
+**1.0.1**
