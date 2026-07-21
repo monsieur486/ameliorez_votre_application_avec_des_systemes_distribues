@@ -19,7 +19,7 @@ import java.util.List;
  * position visitée, attribue une récompense à l'utilisateur.</p>
  */
 @Service
-public class RewardsService {
+public class RewardsService implements AutoCloseable {
     private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
 
     // proximity in miles
@@ -36,6 +36,11 @@ public class RewardsService {
      * Délai maximal d'attente de la fin des tâches avant arrêt forcé du pool (minutes).
      */
     private static final long AWAIT_TERMINATION_MINUTES = 20;
+
+    /**
+     * Exécuteur parallèle réutilisable pour le calcul des récompenses de masse.
+     */
+    private final ParallelTaskExecutor executor = new ParallelTaskExecutor(THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
 
     /**
      * Construit le service avec ses collaborateurs de localisation et de récompenses.
@@ -105,7 +110,18 @@ public class RewardsService {
      * @param users les utilisateurs dont les récompenses sont calculées
      */
     public void calculateRewardsForListUsers(List<User> users) {
-        ParallelTaskExecutor.runInParallel(users, this::calculateRewards, THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
+        executor.runInParallel(users, this::calculateRewards);
+    }
+
+    /**
+     * Arrête proprement le pool de threads réutilisable du service.
+     *
+     * <p><b>Exemple :</b> appelé par le {@link com.openclassrooms.tourguide.service.TourGuideService}
+     * lors de l'arrêt de l'application pour libérer les threads du calcul de récompenses.</p>
+     */
+    @Override
+    public void close() {
+        executor.close();
     }
 
     /**

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.openclassrooms</groupId>
 	<artifactId>tourguide</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>tourguide</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
@@ -72,7 +72,35 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<!-- Build rapide par défaut : exclut les tests de charge (100 000 utilisateurs, ~8 min). -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludedGroups>performance</excludedGroups>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- Profil dédié aux tests de charge : ./mvnw test -Pperformance. -->
+		<profile>
+			<id>performance</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<!-- Remplace la config de base (sinon l'exclusion du groupe reste active). -->
+						<configuration combine.self="override">
+							<!-- N'exécute que les tests taggés performance. -->
+							<groups>performance</groups>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
