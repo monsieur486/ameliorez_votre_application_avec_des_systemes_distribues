@@ -19,16 +19,18 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
 @Service
 public class TourGuideService {
-    private Logger logger = LoggerFactory.getLogger(TourGuideService.class);
+    private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
     private final GpsUtil gpsUtil;
     private final RewardsService rewardsService;
     private final TripPricer tripPricer = new TripPricer();
@@ -107,17 +109,37 @@ public class TourGuideService {
         });
     }
 
-    public List<Provider> getTripDeals(User user) {
-        int cumulativeRewardPoints = user.getUserRewards().stream().mapToInt(UserReward::getRewardPoints).sum();
-        List<Provider> providers = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
-            user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
-            user.getUserPreferences().getTripDuration(), cumulativeRewardPoints);
-        user.setTripDeals(providers);
-        return providers;
-    }
     // Database connection will be used for external users, but for testing purposes
     // internal users are provided and stored in memory
     private final Map<String, User> internalUserMap = new HashMap<>();
+
+    public List<Provider> getTripDeals(User user) {
+        int cumulativeRewardPoints = user.getUserRewards().stream()
+            .mapToInt(UserReward::getRewardPoints)
+            .sum();
+        Set<Provider> providers = new HashSet<>();
+
+        // On garantit au moins dix fournisseurs, quitte à rappeler TripPricer plusieurs fois.
+        int attempts = 0;
+        while (providers.size() < 10
+            && attempts < 200) {
+            attempts++;
+            List<Provider> recupProviders = tripPricer.getPrice(
+                tripPricerApiKey,
+                user.getUserId(),
+                user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
+                user.getUserPreferences().getTripDuration(), cumulativeRewardPoints);
+            for (Provider provider : recupProviders) {
+                if (providers.size() < 10) {
+                    providers.add(provider);
+                }
+            }
+        }
+
+        List<Provider> tripDeals = new ArrayList<>(providers);
+        user.setTripDeals(tripDeals);
+        return tripDeals;
+    }
 
     private void initializeInternalUsers() {
         IntStream.range(0, InternalTestHelper.getInternalUserNumber()).forEach(i -> {
@@ -129,7 +151,7 @@ public class TourGuideService {
 
             internalUserMap.put(userName, user);
         });
-        logger.debug("Created " + InternalTestHelper.getInternalUserNumber() + " internal test users.");
+        logger.debug("Created {} internal test users.", InternalTestHelper.getInternalUserNumber());
     }
 
     private void generateUserLocationHistory(User user) {

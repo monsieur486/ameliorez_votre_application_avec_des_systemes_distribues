@@ -40,9 +40,12 @@ public class RewardsService {
 
         for (VisitedLocation visitedLocation : userLocations) {
             for(Attraction attraction : attractions) {
-                if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
+                if (user.getUserRewards().stream().noneMatch(
+                    r -> r.attraction.attractionName.equals(attraction.attractionName))) {
                     if(nearAttraction(visitedLocation, attraction)) {
-                        user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+                        user.addUserReward(
+                            new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user))
+                        );
                     }
                 }
             }
