@@ -1,0 +1,12 @@
+# IDE
+.idea
+*.iml
+.vscode/
+
+# Build Maven
+target
+
+
+# Outils IA / suivi local — mémoire Claude et rapport de revue, non versionnés.
+CLAUDE.md
+rapport.md
