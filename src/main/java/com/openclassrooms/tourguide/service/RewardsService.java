@@ -2,6 +2,7 @@ package com.openclassrooms.tourguide.service;
 
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
+import com.openclassrooms.tourguide.util.ParallelTaskExecutor;
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
@@ -20,6 +21,15 @@ public class RewardsService {
     private int proximityBuffer = defaultProximityBuffer;
     private final GpsUtil gpsUtil;
     private final RewardCentral rewardsCentral;
+
+    /**
+     * Taille du pool de threads utilisé pour le calcul parallèle des récompenses.
+     */
+    private static final int THREAD_POOL_SIZE = 200;
+    /**
+     * Délai maximal d'attente de la fin des tâches avant arrêt forcé du pool (minutes).
+     */
+    private static final long AWAIT_TERMINATION_MINUTES = 20;
 
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
         this.gpsUtil = gpsUtil;
@@ -50,6 +60,10 @@ public class RewardsService {
                 }
             }
         }
+    }
+
+    public void calculateRewardsForListUsers(List<User> users) {
+        ParallelTaskExecutor.runInParallel(users, this::calculateRewards, THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
     }
 
     public boolean isWithinAttractionProximity(Attraction attraction, Location location) {

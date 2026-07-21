@@ -8,7 +8,6 @@ import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,6 @@ public class TestPerformance {
      * TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
      */
 
-    @Disabled
     @Test
     public void highVolumeTrackLocation() {
         GpsUtil gpsUtil = new GpsUtil();
@@ -66,9 +64,8 @@ public class TestPerformance {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (User user : allUsers) {
-            tourGuideService.trackUserLocation(user);
-        }
+        // Using the new method that tracks a list of users in parallel
+        tourGuideService.trackListUsersLocations(allUsers);
         stopWatch.stop();
         tourGuideService.tracker.stopTracking();
 
@@ -79,7 +76,6 @@ public class TestPerformance {
         );
     }
 
-    @Disabled
     @Test
     public void highVolumeGetRewards() {
         GpsUtil gpsUtil = new GpsUtil();
@@ -95,11 +91,10 @@ public class TestPerformance {
         Attraction attraction = gpsUtil.getAttractions().get(0);
         List<User> allUsers = new ArrayList<>();
         allUsers = tourGuideService.getAllUsers();
-        allUsers.forEach(
-            u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date()))
-        );
+        allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-        allUsers.forEach(rewardsService::calculateRewards);
+        // Using the new method that calculates rewards for a list of users in parallel
+        rewardsService.calculateRewardsForListUsers(allUsers);
 
         for (User user : allUsers) {
             assertFalse(user.getUserRewards().isEmpty());

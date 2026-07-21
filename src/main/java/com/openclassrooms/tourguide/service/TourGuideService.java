@@ -4,6 +4,7 @@ import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
+import com.openclassrooms.tourguide.util.ParallelTaskExecutor;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
 import gpsUtil.location.Location;
@@ -37,6 +38,15 @@ public class TourGuideService {
     private final TripPricer tripPricer = new TripPricer();
     public final Tracker tracker;
     boolean testMode = true;
+
+    /**
+     * Taille du pool de threads utilisé pour le traitement parallèle des utilisateurs.
+     */
+    private static final int THREAD_POOL_SIZE = 200;
+    /**
+     * Délai maximal d'attente de la fin des tâches avant arrêt forcé du pool (minutes).
+     */
+    private static final long AWAIT_TERMINATION_MINUTES = 15;
 
     /**********************************************************************************
      *
@@ -181,6 +191,10 @@ public class TourGuideService {
     private Date getRandomTime() {
         LocalDateTime localDateTime = LocalDateTime.now().minusDays(new Random().nextInt(30));
         return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
+    }
+
+    public void trackListUsersLocations(List<User> users) {
+        ParallelTaskExecutor.runInParallel(users, this::trackUserLocation, THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
     }
 
 }
