@@ -1,0 +1,37 @@
+# EditorConfig — style d'indentation partagé, lu nativement par IntelliJ, VS Code, etc.
+# Prime sur la config de style de l'IDE : garantit une indentation homogène pour tous.
+# https://editorconfig.org
+
+root = true
+
+# Réglages par défaut pour tous les fichiers
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Code Java : convention maison — 4 espaces, jamais de tabulation, ligne <= 120
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Fichiers de configuration Maven / XML
+[*.xml]
+indent_style = space
+indent_size = 4
+
+# YAML (application.yml) : les tabulations y sont interdites par la spec
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Properties
+[*.properties]
+indent_style = space
+indent_size = 4
+
+# Markdown : ne pas rogner les espaces de fin (2 espaces = saut de ligne)
+[*.md]
+trim_trailing_whitespace = false
