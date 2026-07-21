@@ -1,11 +1,11 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
 import org.slf4j.Logger;
@@ -17,6 +17,7 @@ import tripPricer.TripPricer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,15 +91,19 @@ public class TourGuideService {
         return visitedLocation;
     }
 
-    public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-        List<Attraction> nearbyAttractions = new ArrayList<>();
-        for (Attraction attraction : gpsUtil.getAttractions()) {
-            if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-                nearbyAttractions.add(attraction);
-            }
-        }
-
-        return nearbyAttractions;
+    public List<AttractionNearbyUserDto> getNearByAttractions(VisitedLocation visitedLocation, User user) {
+        return gpsUtil.getAttractions().stream()
+            .map(attraction -> Map.entry(
+                attraction,
+                rewardsService.getDistance(attraction, visitedLocation.location)))
+            .sorted(Comparator.comparingDouble(Map.Entry::getValue))
+            .limit(5)
+            .map(entry -> new AttractionNearbyUserDto(
+                entry.getKey(),
+                visitedLocation,
+                rewardsService.getRewardPoints(entry.getKey(), user),
+                entry.getValue()))
+            .toList();
     }
 
     private void addShutDownHook() {

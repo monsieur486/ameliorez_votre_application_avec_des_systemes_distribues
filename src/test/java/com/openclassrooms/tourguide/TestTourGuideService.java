@@ -1,13 +1,12 @@
 package com.openclassrooms.tourguide;
 
+import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.VisitedLocation;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import rewardCentral.RewardCentral;
 import tripPricer.Provider;
@@ -16,6 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestTourGuideService {
@@ -91,7 +92,6 @@ public class TestTourGuideService {
         assertEquals(user.getUserId(), visitedLocation.userId);
     }
 
-    @Disabled // Not yet implemented
     @Test
     public void getNearbyAttractions() {
         GpsUtil gpsUtil = new GpsUtil();
@@ -102,11 +102,35 @@ public class TestTourGuideService {
         User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
         VisitedLocation visitedLocation = tourGuideService.trackUserLocation(user);
 
-        List<Attraction> attractions = tourGuideService.getNearByAttractions(visitedLocation);
+        List<AttractionNearbyUserDto> attractions = tourGuideService.getNearByAttractions(visitedLocation, user);
 
         tourGuideService.tracker.stopTracking();
 
+        // On attend exactement les cinq attractions les plus proches.
         assertEquals(5, attractions.size());
+
+        double previousDistance = -1;
+        for (AttractionNearbyUserDto attraction : attractions) {
+            // Le nom doit être réellement renseigné, pas vide.
+            assertNotNull(attraction.attractionName());
+            assertFalse(attraction.attractionName().isBlank());
+
+            // Les coordonnées de l'utilisateur reprennent bien celles de la localisation visitée.
+            assertEquals(visitedLocation.location.latitude, attraction.userLatitude());
+            assertEquals(visitedLocation.location.longitude, attraction.userLongitude());
+
+            // Les coordonnées de l'attraction sont dans des bornes géographiques valides.
+            assertTrue(attraction.attractionLatitude() >= -90 && attraction.attractionLatitude() <= 90);
+            assertTrue(attraction.attractionLongitude() >= -180 && attraction.attractionLongitude() <= 180);
+
+            // La distance est réellement calculée : positive et croissante d'une attraction à l'autre.
+            assertTrue(attraction.distance() >= 0);
+            assertTrue(attraction.distance() >= previousDistance);
+            previousDistance = attraction.distance();
+
+            // Les points de récompense sont renseignés et strictement positifs.
+            assertTrue(attraction.rewardPoints() > 0);
+        }
     }
 
     @Test
