@@ -11,6 +11,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Thread de fond qui suit périodiquement la localisation de tous les utilisateurs.
+ *
+ * <p><b>Exemple :</b> démarré à la création du TourGuideService, il recalcule les
+ * positions toutes les cinq minutes jusqu'à son arrêt.</p>
+ */
 public class Tracker extends Thread {
     private final Logger logger = LoggerFactory.getLogger(Tracker.class);
     private static final long trackingPollingInterval = TimeUnit.MINUTES.toSeconds(5);
@@ -25,13 +31,22 @@ public class Tracker extends Thread {
     }
 
     /**
-     * Assures to shut down the Tracker thread
+     * Arrête définitivement le thread de suivi.
+     *
+     * <p><b>Exemple :</b> appelé par le shutdown hook de l'application pour interrompre
+     * le suivi avant la fermeture du contexte Spring.</p>
      */
     public void stopTracking() {
         stop = true;
         executorService.shutdownNow();
     }
 
+    /**
+     * Exécute la boucle de suivi : recalcule les positions puis attend l'intervalle.
+     *
+     * <p><b>Exemple :</b> tourne en continu et journalise le temps écoulé à chaque
+     * cycle de suivi jusqu'à réception d'un signal d'arrêt.</p>
+     */
     @Override
     public void run() {
         StopWatch stopWatch = new StopWatch();
