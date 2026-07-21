@@ -1,6 +1,7 @@
 package com.openclassrooms.tourguide;
 
 import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
+import com.openclassrooms.tourguide.exception.UserNotFoundException;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.service.RewardsService;
 import com.openclassrooms.tourguide.service.TourGuideService;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestTourGuideService {
@@ -54,6 +56,20 @@ public class TestTourGuideService {
 
         assertEquals(user, retrivedUser);
         assertEquals(user2, retrivedUser2);
+    }
+
+    @Test
+    public void getUser_utilisateurInconnu_leveUserNotFoundException() {
+        GpsUtil gpsUtil = new GpsUtil();
+        RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
+        InternalTestHelper.setInternalUserNumber(0);
+        TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
+
+        try {
+            assertThrows(UserNotFoundException.class, () -> tourGuideService.getUser("inconnu"));
+        } finally {
+            tourGuideService.tracker.stopTracking();
+        }
     }
 
     @Test

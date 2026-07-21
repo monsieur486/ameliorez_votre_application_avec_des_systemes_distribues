@@ -1,6 +1,7 @@
 package com.openclassrooms.tourguide.service;
 
 import com.openclassrooms.tourguide.dto.AttractionNearbyUserDto;
+import com.openclassrooms.tourguide.exception.UserNotFoundException;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
@@ -100,13 +101,18 @@ public class TourGuideService {
      * Recherche un utilisateur par son nom.
      *
      * <p><b>Exemple :</b> {@code getUser("internalUser0")} renvoie l'utilisateur de test
-     * correspondant, ou {@code null} s'il n'existe pas.</p>
+     * correspondant ; {@code getUser("inconnu")} lève {@link UserNotFoundException}.</p>
      *
      * @param userName le nom de l'utilisateur recherché
-     * @return l'utilisateur trouvé, ou {@code null} si aucun ne correspond
+     * @return l'utilisateur trouvé
+     * @throws UserNotFoundException si aucun utilisateur ne correspond au nom fourni
      */
     public User getUser(String userName) {
-        return internalUserMap.get(userName);
+        User user = internalUserMap.get(userName);
+        if (user == null) {
+            throw new UserNotFoundException(userName);
+        }
+        return user;
     }
 
     /**
