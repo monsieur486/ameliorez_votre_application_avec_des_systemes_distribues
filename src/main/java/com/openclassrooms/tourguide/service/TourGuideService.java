@@ -55,6 +55,11 @@ public class TourGuideService {
      */
     private static final long AWAIT_TERMINATION_MINUTES = 15;
 
+    /**
+     * Exécuteur parallèle réutilisable pour le suivi de localisation de masse.
+     */
+    private final ParallelTaskExecutor executor = new ParallelTaskExecutor(THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
+
     /**********************************************************************************
      *
      * Methods Below: For Internal Testing
@@ -196,11 +201,13 @@ public class TourGuideService {
             .toList();
     }
 
-    // Enregistre un hook d'arrêt de la JVM qui stoppe proprement le tracker.
+    // Enregistre un hook d'arrêt de la JVM qui stoppe le tracker et libère les pools de threads.
     private void addShutDownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 tracker.stopTracking();
+                executor.close();
+                rewardsService.close();
             }
         });
     }
@@ -297,7 +304,7 @@ public class TourGuideService {
      * @param users les utilisateurs à localiser
      */
     public void trackListUsersLocations(List<User> users) {
-        ParallelTaskExecutor.runInParallel(users, this::trackUserLocation, THREAD_POOL_SIZE, AWAIT_TERMINATION_MINUTES);
+        executor.runInParallel(users, this::trackUserLocation);
     }
 
 }
